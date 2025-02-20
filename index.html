@@ -24,7 +24,7 @@
 
         canvas {
             border: 2px solid rgb(243, 243, 243);
-            border-radius: 10px;    
+            border-radius: 10px;
             object-fit: cover;
             width: 100% !important;
             max-width: 400px !important;
@@ -33,19 +33,6 @@
 </head>
 <body>
     <script type="text/javascript">
-        document.addEventListener('DOMContentLoaded', function () {
-            function unlockAudio() {
-                if (game.sound.context && game.sound.context.state === 'suspended') {
-                    game.sound.context.resume().then(() => {
-                        console.log('Áudio desbloqueado no iOS');
-                    });
-                }
-            }
-
-            document.addEventListener('touchstart', unlockAudio, { once: true });
-            document.addEventListener('click', unlockAudio, { once: true });
-        });
-
         var game = new Phaser.Game(400, 625, Phaser.CANVAS, '', { preload: preload, create: create, update: update });
         var score_sound, backboard, whoosh, fail, spawn;
 
@@ -57,11 +44,18 @@
             game.load.audio('spawn', 'assets/audio/spawn.wav');
         }
 
-        function create() {
-            game.sound.setDecodedCallback(['score', 'backboard', 'whoosh', 'fail', 'spawn'], function () {
-                console.log('Todos os sons carregados e prontos para uso');
-            }, this);
+        function unlockAudio() {
+            if (game.sound.context && game.sound.context.state === 'suspended') {
+                game.sound.context.resume().then(() => {
+                    console.log('Áudio desbloqueado no iOS');
+                }).catch(err => console.error('Erro ao desbloquear áudio:', err));
+            }
+        }
 
+        function create() {
+            document.addEventListener('touchstart', unlockAudio, { once: true });
+            document.addEventListener('click', unlockAudio, { once: true });
+            
             score_sound = game.add.audio('score');
             backboard = game.add.audio('backboard');
             backboard.volume = 0.5;
@@ -69,6 +63,14 @@
             fail = game.add.audio('fail');
             fail.volume = 0.1;
             spawn = game.add.audio('spawn');
+        }
+
+        function playSound(sound) {
+            if (sound && sound.isDecoded) {
+                sound.play();
+            } else {
+                console.log('Som ainda não carregado:', sound.key);
+            }
         }
 
         function update() {
