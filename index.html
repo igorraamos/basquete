@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Basquete Anota AI</title>
-    <script src="js/phaser.min.js"></script>
+    <script type="text/javascript" src="js/phaser.min.js"></script>
     <style>
         body {
             display: flex;
@@ -13,49 +13,27 @@
             height: 100vh;
             margin: 0;
             background: #009aff url('./assets/images/fundoGame.svg') no-repeat center center/cover;
+            font-family: Arial, Helvetica, sans-serif;
         }
     </style>
 </head>
 <body>
 <script>
 var game, score_sound, backboard, whoosh, fail, spawn;
-var mobile = window.innerWidth <= 750;
+var screenWidth = window.innerWidth;
+var screenHeight = window.innerHeight;
+var mobile = screenWidth <= 750;
 
 function getCookie() {
-    var scoreCookie;
-    if (!document.cookie.includes('BestScore')) {
-        document.cookie = `BestScore=0`;
-    }
-    document.cookie.split(';').forEach(cookie => {
-        if (cookie.includes('BestScore')) {
-            scoreCookie = cookie;
-        }
-    });
+    var scoreCookie = document.cookie.split('; ').find(row => row.startsWith('BestScore='));
     return scoreCookie ? scoreCookie.split('=')[1] : "0";
 }
 
+function setCookie(newBestScore) {
+    document.cookie = `BestScore=${newBestScore}; path=/;`;
+}
+
 var bestScoreCookie = getCookie();
-
-function initAudio() {
-    if (!game.device.desktop) {
-        document.addEventListener('touchstart', unlockAudio, false);
-        document.addEventListener('click', unlockAudio, false);
-    }
-}
-
-function unlockAudio() {
-    if (game.sound.context && game.sound.context.state === 'suspended') {
-        game.sound.context.resume().then(() => {
-            console.log("Áudio ativado!");
-        }).catch(err => console.error("Erro ao ativar áudio:", err));
-    }
-}
-
-function playSound(sound) {
-    if (sound && game.sound.context && game.sound.context.state === 'running') {
-        sound.play();
-    }
-}
 
 function preload() {
     game.load.image('ball', 'assets/images/ball.png');
@@ -73,19 +51,11 @@ function preload() {
 function create() {
     game.physics.startSystem(Phaser.Physics.ARCADE);
     
-    game.sound.context.resume();
-
     score_sound = game.add.audio('score');
     backboard = game.add.audio('backboard');
     whoosh = game.add.audio('whoosh');
     fail = game.add.audio('fail');
     spawn = game.add.audio('spawn');
-    
-    game.sound.setDecodedCallback([score_sound, backboard, whoosh, fail, spawn], function() {
-        console.log("Áudios prontos para reprodução");
-    }, this);
-    
-    initAudio();
     
     game.stage.backgroundColor = '#009aff';
     var hoop = game.add.sprite(game.world.centerX, 100, 'hoop');
@@ -99,11 +69,11 @@ function create() {
 }
 
 function update() {
-    // Adicione lógica do jogo aqui, se necessário
+    // Lógica do jogo
 }
 
 window.onload = function() {
-    game = new Phaser.Game(400, 625, Phaser.AUTO, '', { preload: preload, create: create, update: update });
+    game = new Phaser.Game(mobile ? screenWidth : 400, mobile ? screenHeight : 625, Phaser.AUTO, '', { preload: preload, create: create, update: update });
 };
 </script>
 </body>
