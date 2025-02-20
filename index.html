@@ -6,13 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Basquete Anota AI</title>
     <link rel="icon" type="imagem/png" href="./assets/images/ball.png" />
-    <!-- Usando CDN do Phaser com fallback para local -->
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/phaser/2.6.2/phaser.min.js"></script>
-    <script type="text/javascript">
-        if (typeof Phaser === 'undefined') {
-            document.write('<script src="js/phaser.min.js"><\/script>');
-        }
-    </script>
+    <!-- Alteração na ordem de carregamento do Phaser -->
+    <script src="js/phaser.min.js"></script>
     <!-- Google Adds -->
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2210446009817515" crossorigin="anonymous"></script>
     <!-- Google Tag Manager -->
@@ -98,34 +93,17 @@
 </script>
 
 <script type="text/javascript">
-var screenWidth = window.innerWidth;
-var screenHeight = window.innerHeight;
-var mobile;
-
-if (screenWidth <= 750) {
-    mobile = true;
-} else {
-    mobile = false;
-}
-
-// Função para desbloqueio de áudio
-function unlockAudio() {
-    var audioContext = game.sound.context;
-    if (audioContext && audioContext.state === 'suspended') {
-        audioContext.resume();
+// Função para verificar se o Phaser está carregado
+function checkPhaser() {
+    if (typeof Phaser === 'undefined') {
+        console.error('Phaser não está carregado!');
+        document.body.innerHTML = '<p style="color: white; text-align: center;">Erro ao carregar o jogo. Por favor, recarregue a página.</p>';
+        return false;
     }
+    return true;
 }
 
-// Variáveis do jogo
-var game;
-var hoop, left_rim, right_rim, ball, front_rim;
-var current_score = 0, current_score_text, high_score = 0, high_score_text, current_best_text;
-var score_sound, backboard, whoosh, fail, spawn;
-var moveInTween, fadeInTween, moveOutTween, fadeOutTween, emoji, emojiName;
-var collisionGroup;
-var bestScoreCookie;
-
-// Funções do Cookie
+// Funções de cookie
 const getCookie = () => {
     var scoreCookie;
 
@@ -146,23 +124,23 @@ const setCookie = (newBestScore) => {
     document.cookie = `BestScore=${newBestScore}`;
 };
 
-bestScoreCookie = getCookie();
+// Variáveis globais
+var screenWidth = window.innerWidth;
+var screenHeight = window.innerHeight;
+var mobile = screenWidth <= 750;
+var game;
+var hoop, left_rim, right_rim, ball, front_rim;
+var current_score = 0, current_score_text, high_score = 0, high_score_text, current_best_text;
+var score_sound, backboard, whoosh, fail, spawn;
+var moveInTween, fadeInTween, moveOutTween, fadeOutTween, emoji, emojiName;
+var collisionGroup;
+var bestScoreCookie = getCookie();
+var location_interval;
+var isDown = false;
+var start_location;
+var end_location;
 
-// Inicialização do jogo
-if (mobile) {
-    game = new Phaser.Game(screenWidth, screenHeight, Phaser.CANVAS, '', { 
-        preload: preload, 
-        create: create, 
-        update: update 
-    });    
-} else {
-    game = new Phaser.Game(400, 625, Phaser.CANVAS, '', { 
-        preload: preload, 
-        create: create, 
-        update: update 
-    });
-}
-
+// Funções principais do jogo
 function preload() {
     game.load.image('ball', 'assets/images/ball.png');
     game.load.image('hoop', 'assets/images/hoop.png');
@@ -195,23 +173,22 @@ function create() {
 
     collisionGroup = game.physics.p2.createCollisionGroup();
 
-    // Inicialização do áudio com verificação de contexto
-    try {
-        game.sound.boot();
-        
-        score_sound = game.add.audio('score', 1);
-        backboard = game.add.audio('backboard', 0.5);
-        whoosh = game.add.audio('whoosh', 1);
-        fail = game.add.audio('fail', 0.1);
-        spawn = game.add.audio('spawn', 1);
+    // Inicialização do áudio
+    score_sound = game.add.audio('score');
+    backboard = game.add.audio('backboard');
+    backboard.volume = 0.5;
+    whoosh = game.add.audio('whoosh');
+    fail = game.add.audio('fail');
+    fail.volume = 0.1;
+    spawn = game.add.audio('spawn');
 
-        // Adicionar eventos para desbloqueio de áudio em dispositivos móveis
-        if (mobile) {
-            document.addEventListener('touchstart', unlockAudio, false);
-            document.addEventListener('click', unlockAudio, false);
-        }
-    } catch (e) {
-        console.log('Erro ao inicializar áudio:', e);
+    // Desbloqueio de áudio para dispositivos móveis
+    if (mobile) {
+        document.addEventListener('touchstart', function() {
+            if (game.sound.context.state === 'suspended') {
+                game.sound.context.resume();
+            }
+        }, false);
     }
 
     game.stage.backgroundColor = '#009aff';
@@ -230,7 +207,7 @@ function create() {
         right_rim = game.add.sprite(282, 190, 'side rim');
     }
 
-    game.physics.p2.enable([ left_rim, right_rim ], false);
+    game.physics.p2.enable([left_rim, right_rim], false);
 
     left_rim.body.setCircle(2.5);
     left_rim.body.static = true;
@@ -248,8 +225,6 @@ function create() {
     game.input.onDown.add(click, this);
     game.input.onUp.add(release, this);
 }
-
-// Continuação do arquivo index.html após a função create()
 
 function update() {
     if (ball && ball.body.velocity.y > 0) {
@@ -290,8 +265,8 @@ function update() {
             emoji = game.add.sprite(180, 100, emojiName);
         }
         emoji.scale.setTo(0.25, 0.25);
-        moveInTween = game.add.tween(emoji).from( { y: 150 }, 500, Phaser.Easing.Elastic.Out, true);
-        fadeInTween = game.add.tween(emoji).from( { alpha: 0 }, 200, Phaser.Easing.Linear.None, true, 0, 0, false);
+        moveInTween = game.add.tween(emoji).from({ y: 150 }, 500, Phaser.Easing.Elastic.Out, true);
+        fadeInTween = game.add.tween(emoji).from({ alpha: 0 }, 200, Phaser.Easing.Linear.None, true, 0, 0, false);
         moveInTween.onComplete.add(tweenOut, this);
     }
 
@@ -303,15 +278,15 @@ function update() {
 }
 
 function tweenOut() {
-    moveOutTween = game.add.tween(emoji).to( { y: 50 }, 600, Phaser.Easing.Elastic.In, true);
+    moveOutTween = game.add.tween(emoji).to({ y: 50 }, 600, Phaser.Easing.Elastic.In, true);
     moveOutTween.onComplete.add(function() { emoji.kill(); }, this);
-    setTimeout(function () {
-        fadeOutTween = game.add.tween(emoji).to( { alpha: 0 }, 300, Phaser.Easing.Linear.None, true, 0, 0, false);
+    setTimeout(function() {
+        fadeOutTween = game.add.tween(emoji).to({ alpha: 0 }, 300, Phaser.Easing.Linear.None, true, 0, 0, false);
     }, 450);
 }
 
 function hitRim() {
-    if (backboard && backboard.isReady) {
+    if (backboard) {
         try {
             backboard.play();
         } catch (e) {
@@ -331,34 +306,21 @@ function createBall() {
     } else {
         xpos = 60 + Math.random() * 250;
     }
-    
-    try {
-        if (spawn && spawn.isReady) {
-            spawn.play();
-        }
-    } catch (e) {
-        console.log('Erro ao tocar som de spawn:', e);
-    }
-    
+    spawn.play();
     ball = game.add.sprite(xpos, 547, 'ball');
-    game.add.tween(ball.scale).from({x : 0.7, y : 0.7}, 100, Phaser.Easing.Linear.None, true, 0, 0, false);
+    game.add.tween(ball.scale).from({x: 0.7, y: 0.7}, 100, Phaser.Easing.Linear.None, true);
     game.physics.p2.enable(ball, false);
     ball.body.setCircle(60);
     ball.launched = false;
     ball.isBelowHoop = false;
 }
 
-var location_interval;
-var isDown = false;
-var start_location;
-var end_location;
-
 function click(pointer) {
-    var bodies = game.physics.p2.hitTest(pointer.position, [ ball.body ]);
+    var bodies = game.physics.p2.hitTest(pointer.position, [ball.body]);
     if (bodies.length) {
         start_location = [pointer.x, pointer.y];
         isDown = true;
-        location_interval = setInterval(function () {
+        location_interval = setInterval(function() {
             start_location = [pointer.x, pointer.y];
         }.bind(this), 200);
     }
@@ -390,15 +352,17 @@ function launch(x_traj) {
         ball.body.velocity.x = x_traj;
         ball.body.velocity.y = -1750;
         ball.body.rotateRight(x_traj / 3);
-        
-        try {
-            if (whoosh && whoosh.isReady) {
-                whoosh.play();
-            }
-        } catch (e) {
-            console.log('Erro ao tocar som de lançamento:', e);
-        }
+        whoosh.play();
     }
+}
+
+// Inicialização do jogo
+if (mobile) {
+    // NOTE: Originally 640x1000. Other possible sizes: 512x800, 400x625
+    var game = new Phaser.Game(screenWidth, screenHeight, Phaser.CANVAS, '', { preload: preload, create: create, update: update });    
+} else {
+    // NOTE: Originally 640x1000. Other possible sizes: 512x800, 400x625
+    var game = new Phaser.Game(400, 625, Phaser.CANVAS, '', { preload: preload, create: create, update: update });
 }
 
 </script>
