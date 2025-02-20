@@ -23,18 +23,8 @@ var game, score_sound, backboard, whoosh, fail, spawn, ball;
 var screenWidth = window.innerWidth;
 var screenHeight = window.innerHeight;
 var mobile = screenWidth <= 750;
-var start_location, end_location, isDown = false;
-
-function getCookie() {
-    var scoreCookie = document.cookie.split('; ').find(row => row.startsWith('BestScore='));
-    return scoreCookie ? scoreCookie.split('=')[1] : "0";
-}
-
-function setCookie(newBestScore) {
-    document.cookie = `BestScore=${newBestScore}; path=/;`;
-}
-
-var bestScoreCookie = getCookie();
+var isDragging = false;
+var startX, startY;
 
 function preload() {
     game.load.image('ball', 'assets/images/ball.png');
@@ -51,14 +41,8 @@ function preload() {
 
 function create() {
     game.physics.startSystem(Phaser.Physics.ARCADE);
-    
-    score_sound = game.add.audio('score');
-    backboard = game.add.audio('backboard');
-    whoosh = game.add.audio('whoosh');
-    fail = game.add.audio('fail');
-    spawn = game.add.audio('spawn');
-    
     game.stage.backgroundColor = '#009aff';
+    
     var hoop = game.add.sprite(game.world.centerX, 100, 'hoop');
     hoop.anchor.set(0.5);
     
@@ -68,42 +52,49 @@ function create() {
     ball.body.collideWorldBounds = true;
     ball.body.bounce.set(0.8);
     ball.body.gravity.y = 1000;
-
+    
     game.input.onDown.add(startDrag, this);
     game.input.onUp.add(releaseDrag, this);
 }
 
 function startDrag(pointer) {
     if (Phaser.Rectangle.contains(ball.getBounds(), pointer.x, pointer.y)) {
-        start_location = { x: pointer.x, y: pointer.y };
-        isDown = true;
+        isDragging = true;
+        startX = pointer.x;
+        startY = pointer.y;
     }
 }
 
 function releaseDrag(pointer) {
-    if (isDown) {
-        isDown = false;
-        end_location = { x: pointer.x, y: pointer.y };
+    if (isDragging) {
+        isDragging = false;
+        var endX = pointer.x;
+        var endY = pointer.y;
 
-        if (end_location.y < start_location.y) {
-            var x_traj = (end_location.x - start_location.x) * 4;
-            var y_traj = (end_location.y - start_location.y) * -6;
-            launchBall(x_traj, y_traj);
+        var velocityX = (startX - endX) * -5;
+        var velocityY = (startY - endY) * -5;
+
+        if (velocityY > 0) {
+            launchBall(velocityX, velocityY);
         }
     }
 }
 
-function launchBall(x_traj, y_traj) {
-    ball.body.velocity.x = x_traj;
-    ball.body.velocity.y = y_traj;
+function launchBall(velocityX, velocityY) {
+    ball.body.velocity.x = velocityX;
+    ball.body.velocity.y = velocityY;
     whoosh.play();
 }
 
 function update() {
     if (ball.y > game.world.height) {
-        ball.reset(game.world.centerX, game.world.height - 100);
-        ball.body.velocity.set(0);
+        resetBall();
     }
+}
+
+function resetBall() {
+    ball.reset(game.world.centerX, game.world.height - 100);
+    ball.body.velocity.set(0);
 }
 
 window.onload = function() {
