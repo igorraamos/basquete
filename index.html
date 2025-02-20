@@ -6,9 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Basquete Anota AI</title>
   <link rel="icon" type="image/png" href="assets/images/ball.png">
-  <!-- Carregando Phaser do CDN para garantir disponibilidade -->
   <script src="https://cdn.jsdelivr.net/npm/phaser@2.6.2/build/phaser.min.js"></script>
-  <!-- Scripts do Google removidos temporariamente para debug -->
   <style type="text/css">
     body {
       display: flex;
@@ -195,23 +193,27 @@
       }
     }
 
-    // Funções auxiliares
     function setupScoreTexts() {
-      currentScoreText = game.add.text(20, 20, '', {
+      // Pontuação atual (número grande)
+      currentScoreText = game.add.text(20, 15, '', {
         font: 'Arial',
         fontSize: '40px',
         fill: '#fff',
         align: 'center'
       });
-      currentBestText = game.add.text(20, 20, 'Melhor pontuação:', {
+
+      // Texto "Melhor pontuação:" (embaixo do número atual)
+      currentBestText = game.add.text(20, 65, 'Melhor pontuação:', {
         font: 'Arial',
         fontSize: '20px',
         fill: '#fff',
         align: 'center'
       });
-      currentBestScoreText = game.add.text(190, 15, getCookie(), {
+
+      // Número da melhor pontuação (ao lado do texto "Melhor pontuação:")
+      currentBestScoreText = game.add.text(190, 65, getCookie(), {
         font: 'Arial',
-        fontSize: '30px',
+        fontSize: '20px',
         fill: '#fff',
         align: 'center'
       });
