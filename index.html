@@ -23,8 +23,8 @@ var game, score_sound, backboard, whoosh, fail, spawn, ball;
 var screenWidth = window.innerWidth;
 var screenHeight = window.innerHeight;
 var mobile = screenWidth <= 750;
-var isDragging = false;
-var startX, startY;
+var isDown = false;
+var start_location, end_location;
 
 function preload() {
     game.load.image('ball', 'assets/images/ball.png');
@@ -40,65 +40,75 @@ function preload() {
 }
 
 function create() {
-    game.physics.startSystem(Phaser.Physics.ARCADE);
-    game.stage.backgroundColor = '#009aff';
+    game.physics.startSystem(Phaser.Physics.P2JS);
+    game.physics.p2.gravity.y = 3000;
     
+    score_sound = game.add.audio('score');
+    backboard = game.add.audio('backboard');
+    whoosh = game.add.audio('whoosh');
+    fail = game.add.audio('fail');
+    spawn = game.add.audio('spawn');
+    
+    game.stage.backgroundColor = '#009aff';
     var hoop = game.add.sprite(game.world.centerX, 100, 'hoop');
     hoop.anchor.set(0.5);
     
-    ball = game.add.sprite(game.world.centerX, game.world.height - 100, 'ball');
-    ball.anchor.set(0.5);
-    game.physics.arcade.enable(ball);
-    ball.body.collideWorldBounds = true;
-    ball.body.bounce.set(0.8);
-    ball.body.gravity.y = 1000;
-    
-    game.input.onDown.add(startDrag, this);
-    game.input.onUp.add(releaseDrag, this);
+    createBall();
+    game.input.onDown.add(click, this);
+    game.input.onUp.add(release, this);
 }
 
-function startDrag(pointer) {
-    if (Phaser.Rectangle.contains(ball.getBounds(), pointer.x, pointer.y)) {
-        isDragging = true;
-        startX = pointer.x;
-        startY = pointer.y;
+function createBall() {
+    ball = game.add.sprite(game.world.centerX, game.world.height - 100, 'ball');
+    ball.anchor.set(0.5);
+    game.physics.p2.enable(ball, false);
+    ball.body.setCircle(36);
+    ball.launched = false;
+    ball.isBelowHoop = false;
+    spawn.play();
+}
+
+function click(pointer) {
+    var bodies = game.physics.p2.hitTest(pointer.position, [ball.body]);
+    if (bodies.length) {
+        start_location = { x: pointer.x, y: pointer.y };
+        isDown = true;
     }
 }
 
-function releaseDrag(pointer) {
-    if (isDragging) {
-        isDragging = false;
-        var endX = pointer.x;
-        var endY = pointer.y;
-
-        var velocityX = (startX - endX) * -5;
-        var velocityY = (startY - endY) * -5;
-
-        if (velocityY > 0) {
-            launchBall(velocityX, velocityY);
+function release(pointer) {
+    if (isDown) {
+        isDown = false;
+        end_location = { x: pointer.x, y: pointer.y };
+        if (end_location.y < start_location.y) {
+            var slopeX = (end_location.x - start_location.x);
+            var slopeY = (end_location.y - start_location.y);
+            var x_traj = -800 * slopeX / slopeY;
+            launch(x_traj);
         }
     }
 }
 
-function launchBall(velocityX, velocityY) {
-    ball.body.velocity.x = velocityX;
-    ball.body.velocity.y = velocityY;
-    whoosh.play();
-}
-
-function update() {
-    if (ball.y > game.world.height) {
-        resetBall();
+function launch(x_traj) {
+    if (!ball.launched) {
+        ball.body.setCircle(36);
+        ball.launched = true;
+        ball.body.velocity.x = x_traj;
+        ball.body.velocity.y = -1750;
+        ball.body.rotateRight(x_traj / 3);
+        whoosh.play();
     }
 }
 
-function resetBall() {
-    ball.reset(game.world.centerX, game.world.height - 100);
-    ball.body.velocity.set(0);
+function update() {
+    if (ball.body.y > game.world.height) {
+        ball.destroy();
+        createBall();
+    }
 }
 
 window.onload = function() {
-    game = new Phaser.Game(mobile ? screenWidth : 400, mobile ? screenHeight : 625, Phaser.AUTO, '', { preload: preload, create: create, update: update });
+    game = new Phaser.Game(mobile ? screenWidth : 400, mobile ? screenHeight : 625, Phaser.CANVAS, '', { preload: preload, create: create, update: update });
 };
 </script>
 </body>
