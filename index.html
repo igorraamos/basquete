@@ -249,8 +249,159 @@ function create() {
     game.input.onUp.add(release, this);
 }
 
-// [Resto do código permanece exatamente igual ao original]
+// Continuação do arquivo index.html após a função create()
+
+function update() {
+    if (ball && ball.body.velocity.y > 0) {
+        if (mobile) {
+            front_rim = game.add.sprite(((screenWidth / 2) - 83), 186, 'front rim');
+        } else {
+            front_rim = game.add.sprite(117, 187, 'front rim');
+        }
+        ball.body.collides([collisionGroup], hitRim, this);
+    }
+
+    if (ball && ball.body.velocity.y > 0 && ball.body.y > 188 && !ball.isBelowHoop) {
+        ball.isBelowHoop = true;
+        ball.body.collideWorldBounds = false;
+        var rand = Math.floor(Math.random() * 5);
+        if (ball.body.x > 151 && ball.body.x < 249) {
+            emojiName = "win" + rand;
+            current_score += 1;
+            current_score_text.text = current_score;
+            score_sound.play();
+            if (current_score > bestScoreCookie) {
+                setCookie(current_score);
+            }            
+        } else {
+            emojiName = "lose" + rand;
+            fail.play();
+            if (current_score > high_score) {
+                high_score = current_score;
+            }
+            current_score = 0;
+            current_score_text.text = '';
+            current_best_text.text = 'Melhor pontuação:';
+            current_best_score_text.text = getCookie();
+        }
+        if (mobile) {
+            emoji = game.add.sprite((screenWidth / 2) - 20, 100, emojiName);
+        } else {
+            emoji = game.add.sprite(180, 100, emojiName);
+        }
+        emoji.scale.setTo(0.25, 0.25);
+        moveInTween = game.add.tween(emoji).from( { y: 150 }, 500, Phaser.Easing.Elastic.Out, true);
+        fadeInTween = game.add.tween(emoji).from( { alpha: 0 }, 200, Phaser.Easing.Linear.None, true, 0, 0, false);
+        moveInTween.onComplete.add(tweenOut, this);
+    }
+
+    if (ball && ball.body.y > 1200) {
+        game.physics.p2.gravity.y = 0;
+        ball.kill();
+        createBall();
+    }
+}
+
+function tweenOut() {
+    moveOutTween = game.add.tween(emoji).to( { y: 50 }, 600, Phaser.Easing.Elastic.In, true);
+    moveOutTween.onComplete.add(function() { emoji.kill(); }, this);
+    setTimeout(function () {
+        fadeOutTween = game.add.tween(emoji).to( { alpha: 0 }, 300, Phaser.Easing.Linear.None, true, 0, 0, false);
+    }, 450);
+}
+
+function hitRim() {
+    if (backboard && backboard.isReady) {
+        try {
+            backboard.play();
+        } catch (e) {
+            console.log('Erro ao tocar som:', e);
+        }
+    }
+}
+
+function createBall() {
+    var xpos;
+    if (current_score === 0) {
+        if (mobile) {
+            xpos = (screenWidth / 2);
+        } else {
+            xpos = 200;
+        }
+    } else {
+        xpos = 60 + Math.random() * 250;
+    }
+    
+    try {
+        if (spawn && spawn.isReady) {
+            spawn.play();
+        }
+    } catch (e) {
+        console.log('Erro ao tocar som de spawn:', e);
+    }
+    
+    ball = game.add.sprite(xpos, 547, 'ball');
+    game.add.tween(ball.scale).from({x : 0.7, y : 0.7}, 100, Phaser.Easing.Linear.None, true, 0, 0, false);
+    game.physics.p2.enable(ball, false);
+    ball.body.setCircle(60);
+    ball.launched = false;
+    ball.isBelowHoop = false;
+}
+
+var location_interval;
+var isDown = false;
+var start_location;
+var end_location;
+
+function click(pointer) {
+    var bodies = game.physics.p2.hitTest(pointer.position, [ ball.body ]);
+    if (bodies.length) {
+        start_location = [pointer.x, pointer.y];
+        isDown = true;
+        location_interval = setInterval(function () {
+            start_location = [pointer.x, pointer.y];
+        }.bind(this), 200);
+    }
+}
+
+function release(pointer) {
+    if (isDown) {
+        window.clearInterval(location_interval);
+        isDown = false;
+        end_location = [pointer.x, pointer.y];
+
+        if (end_location[1] < start_location[1]) {
+            var slope = [end_location[0] - start_location[0], end_location[1] - start_location[1]];
+            var x_traj = -800 * slope[0] / slope[1];
+            launch(x_traj);
+        }
+    }
+}
+
+function launch(x_traj) {
+    if (ball.launched === false) {
+        ball.body.setCircle(36);
+        ball.body.setCollisionGroup(collisionGroup);
+        current_best_text.text = '';
+        current_best_score_text.text = '';
+        ball.launched = true;
+        game.physics.p2.gravity.y = 3000;
+        game.add.tween(ball.scale).to({x : 0.6, y : 0.6}, 500, Phaser.Easing.Linear.None, true, 0, 0, false);
+        ball.body.velocity.x = x_traj;
+        ball.body.velocity.y = -1750;
+        ball.body.rotateRight(x_traj / 3);
+        
+        try {
+            if (whoosh && whoosh.isReady) {
+                whoosh.play();
+            }
+        } catch (e) {
+            console.log('Erro ao tocar som de lançamento:', e);
+        }
+    }
+}
 
 </script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/vcd15cbe7772f49c399c6a5babf22c1241717689176015" integrity="sha512-ZpsOmlRQV6y907TI0dKBHq9Md29nnaEIPlkf84rnaERnq6zvWvPUqr2ft8M1aS28oN72PdrCzSjY4U6VaAw1EQ==" data-cf-beacon='{"rayId":"9150916acb76f252","serverTiming":{"name":{"cfExtPri":true,"cfL4":true,"cfSpeedBrain":true,"cfCacheStatus":true}},"version":"2025.1.0","token":"8f05bd1d86b34a4ba40ca901367f3259"}' crossorigin="anonymous"></script>
 </body>
 </html>
