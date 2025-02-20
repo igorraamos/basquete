@@ -53,9 +53,13 @@
         }
 
         function create() {
-            document.addEventListener('touchstart', unlockAudio, { once: true });
+            document.addEventListener('touchend', unlockAudio, { once: true });
             document.addEventListener('click', unlockAudio, { once: true });
             
+            game.sound.setDecodedCallback(['score', 'backboard', 'whoosh', 'fail', 'spawn'], function() {
+                console.log('Todos os áudios foram carregados.');
+            }, this);
+
             score_sound = game.add.audio('score');
             backboard = game.add.audio('backboard');
             backboard.volume = 0.5;
