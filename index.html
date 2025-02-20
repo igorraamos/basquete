@@ -21,6 +21,21 @@
 var game, score_sound, backboard, whoosh, fail, spawn;
 var mobile = window.innerWidth <= 750;
 
+function getCookie() {
+    var scoreCookie;
+    if (!document.cookie.includes('BestScore')) {
+        document.cookie = `BestScore=0`;
+    }
+    document.cookie.split(';').forEach(cookie => {
+        if (cookie.includes('BestScore')) {
+            scoreCookie = cookie;
+        }
+    });
+    return scoreCookie ? scoreCookie.split('=')[1] : "0";
+}
+
+var bestScoreCookie = getCookie();
+
 function initAudio() {
     if (!game.device.desktop) {
         document.addEventListener('touchstart', unlockAudio, false);
