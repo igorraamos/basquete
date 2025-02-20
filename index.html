@@ -1,89 +1,92 @@
 <!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
+	<meta charset="UTF-8" />
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Basquete Anota AI</title>
-    <link rel="icon" type="imagem/png" href="./assets/images/ball.png" />
-    <script type="text/javascript" src="js/phaser.min.js"></script>
+	<link rel="icon" type="imagem/png" href="./assets/images/ball.png" />
+	<script type="text/javascript" src="js/phaser.min.js"></script>
+	<!-- Google Adds -->
+	<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2210446009817515"
+     crossorigin="anonymous"></script>
+	<!-- Google Tag Manager -->
+	<script async src="https://www.googletagmanager.com/gtag/js?id=G-WSPVKJTS0V"></script>
     <style type="text/css">
         body {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            max-width: 100vw;
-            height: 100vh;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			max-width: 100vw;
+			height: 100vh;
             margin: 0;
-            box-sizing: border-box;
-            background-image: url('./assets/images/fundoGame.svg');
-            background-repeat: no-repeat;
-            background-size: cover;
-            background-color: #009aff;
-            font-family: Arial, Helvetica, sans-serif;
+			box-sizing: border-box;
+			background-image: url('./assets/images/fundoGame.svg');
+			background-repeat: no-repeat;
+			background-size: cover;
+			background-color: #009aff;
+			font-family: Arial, Helvetica, sans-serif;
         }
-
-        canvas {
-            border: 2px solid rgb(243, 243, 243);
-            border-radius: 10px;
-            object-fit: cover;
-            width: 100% !important;
-            max-width: 400px !important;
-        }
+		canvas {
+			border: 2px solid rgb(243, 243, 243);
+			border-radius: 10px; 	
+			object-fit: cover;
+			width: 100% !important;
+			max-width: 400px !important;
+		}
+		@media screen and (max-width: 750px){
+			body {
+				padding: 0;
+				background-image: none;
+			}
+			canvas {
+				margin: 0;
+				padding: 0;
+				border: none;
+			}
+		}
     </style>
 </head>
 <body>
-    <script type="text/javascript">
-        var game;
-        var score_sound, backboard, whoosh, fail, spawn;
-
-        function preload() {
-            game.load.audio('score', 'assets/audio/score.wav');
-            game.load.audio('backboard', 'assets/audio/backboard.wav');
-            game.load.audio('whoosh', 'assets/audio/whoosh.wav');
-            game.load.audio('fail', 'assets/audio/fail.wav');
-            game.load.audio('spawn', 'assets/audio/spawn.wav');
-        }
-
-        function unlockAudio() {
-            if (game.sound.context && game.sound.context.state === 'suspended') {
-                game.sound.context.resume().then(() => {
-                    console.log('Áudio desbloqueado no iOS');
-                }).catch(err => console.error('Erro ao desbloquear áudio:', err));
-            }
-        }
-
-        function create() {
-            document.addEventListener('touchend', unlockAudio, { once: true });
-            document.addEventListener('click', unlockAudio, { once: true });
-            
-            game.sound.setDecodedCallback(['score', 'backboard', 'whoosh', 'fail', 'spawn'], function() {
-                console.log('Todos os áudios foram carregados.');
-            }, this);
-
-            score_sound = game.add.audio('score');
-            backboard = game.add.audio('backboard');
-            backboard.volume = 0.5;
-            whoosh = game.add.audio('whoosh');
-            fail = game.add.audio('fail');
-            fail.volume = 0.1;
-            spawn = game.add.audio('spawn');
-        }
-
-        function playSound(sound) {
-            if (sound && sound.isDecoded) {
-                sound.play();
-            } else {
-                console.log('Som ainda não carregado:', sound.key);
-            }
-        }
-
-        function update() {
-            // Atualizações do jogo
-        }
-
-        window.onload = function() {
-            game = new Phaser.Game(400, 625, Phaser.CANVAS, '', { preload: preload, create: create, update: update });
-        };
-    </script>
+<script async 
+		src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2210446009817515" 
+		crossorigin="anonymous">
+</script>
+<ins class="adsbygoogle responsive-ads"
+		style="display: block !important;"
+		data-ad-client="ca-pub-2210446009817515"
+		data-ad-slot="4580182721"
+		data-ad-format="auto" 
+		data-full-width-responsive="true" >
+</ins>
+<script>
+	(adsbygoogle = window.adsbygoogle || []).push({});
+</script>
+<script type="text/javascript">
+var game = new Phaser.Game(400, 625, Phaser.CANVAS, '', { preload: preload, create: create, update: update });
+function preload() {
+	game.load.image('ball', 'assets/images/ball.png');
+	game.load.image('hoop', 'assets/images/hoop.png');
+	game.load.audio('score', 'assets/audio/score.wav');
+	game.load.audio('backboard', 'assets/audio/backboard.wav');
+	game.load.audio('whoosh', 'assets/audio/whoosh.wav');
+	game.load.audio('fail', 'assets/audio/fail.wav');
+	game.load.audio('spawn', 'assets/audio/spawn.wav');
+}
+var score_sound, backboard, whoosh, fail, spawn;
+function create() {
+	game.physics.startSystem(Phaser.Physics.P2JS);
+	game.physics.p2.gravity.y = 3000;
+	score_sound = game.add.audio('score');
+	backboard = game.add.audio('backboard');
+	whoosh = game.add.audio('whoosh');
+	fail = game.add.audio('fail');
+	spawn = game.add.audio('spawn');
+	game.input.onDown.add(() => {
+		whoosh.play();
+	}, this);
+}
+function update() {}
+</script>
 </body>
 </html>
