@@ -42,6 +42,8 @@ document.addEventListener("DOMContentLoaded", function() {
 var score_sound, backboard, whoosh, fail, spawn;
 
 function preload() {
+    this.load.image('ball', 'assets/images/ball.png');
+    this.load.image('hoop', 'assets/images/hoop.png');
     this.load.audio('score', 'assets/audio/score.wav');
     this.load.audio('backboard', 'assets/audio/backboard.wav');
     this.load.audio('whoosh', 'assets/audio/whoosh.wav');
@@ -56,10 +58,13 @@ function create() {
     whoosh = this.sound.add('whoosh');
     fail = this.sound.add('fail');
     spawn = this.sound.add('spawn');
-
+    
+    this.add.image(200, 312, 'hoop');
+    this.add.image(200, 500, 'ball');
+    
     function unlockAudio() {
-        if (this.sound.context && this.sound.context.state === 'suspended') {
-            this.sound.context.resume().then(() => {
+        if (game.sound.context && game.sound.context.state === 'suspended') {
+            game.sound.context.resume().then(() => {
                 console.log('Áudio desbloqueado');
             }).catch(err => console.log('Erro ao desbloquear áudio:', err));
         }
