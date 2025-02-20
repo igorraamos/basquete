@@ -58,6 +58,11 @@ function playSound(sound) {
 }
 
 function preload() {
+    game.load.image('ball', 'assets/images/ball.png');
+    game.load.image('hoop', 'assets/images/hoop.png');
+    game.load.image('side_rim', 'assets/images/side_rim.png');
+    game.load.image('front_rim', 'assets/images/front_rim.png');
+    
     game.load.audio('score', 'assets/audio/score.wav');
     game.load.audio('backboard', 'assets/audio/backboard.wav');
     game.load.audio('whoosh', 'assets/audio/whoosh.wav');
@@ -66,6 +71,8 @@ function preload() {
 }
 
 function create() {
+    game.physics.startSystem(Phaser.Physics.ARCADE);
+    
     game.sound.context.resume();
 
     score_sound = game.add.audio('score');
@@ -79,10 +86,24 @@ function create() {
     }, this);
     
     initAudio();
+    
+    game.stage.backgroundColor = '#009aff';
+    var hoop = game.add.sprite(game.world.centerX, 100, 'hoop');
+    hoop.anchor.set(0.5);
+    
+    var ball = game.add.sprite(game.world.centerX, game.world.height - 100, 'ball');
+    ball.anchor.set(0.5);
+    game.physics.arcade.enable(ball);
+    ball.body.collideWorldBounds = true;
+    ball.body.bounce.set(0.8);
+}
+
+function update() {
+    // Adicione lógica do jogo aqui, se necessário
 }
 
 window.onload = function() {
-    game = new Phaser.Game(400, 625, Phaser.CANVAS, '', { preload: preload, create: create });
+    game = new Phaser.Game(400, 625, Phaser.AUTO, '', { preload: preload, create: create, update: update });
 };
 </script>
 </body>
