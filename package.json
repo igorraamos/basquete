@@ -1,0 +1,14 @@
+{
+  "name": "basquete",
+  "version": "1.0.0",
+  "description": "Projeto de basquete",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "build": "echo 'No build step defined'"
+  },
+  "author": "igorraamos",
+  "license": "MIT",
+  "dependencies": {},
+  "devDependencies": {}
+}
