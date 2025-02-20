@@ -36,12 +36,14 @@
 var game;
 
 document.addEventListener("DOMContentLoaded", function() {
+    console.log("Iniciando Phaser...");
     game = new Phaser.Game(400, 625, Phaser.AUTO, '', { preload: preload, create: create, update: update });
 });
 
 var score_sound, backboard, whoosh, fail, spawn;
 
 function preload() {
+    console.log("Carregando assets...");
     this.load.image('ball', 'assets/images/ball.png');
     this.load.image('hoop', 'assets/images/hoop.png');
     this.load.audio('score', 'assets/audio/score.wav');
@@ -52,6 +54,7 @@ function preload() {
 }
 
 function create() {
+    console.log("Criando objetos do jogo...");
     this.sound.mute = false;
     score_sound = this.sound.add('score');
     backboard = this.sound.add('backboard');
@@ -59,7 +62,7 @@ function create() {
     fail = this.sound.add('fail');
     spawn = this.sound.add('spawn');
     
-    this.add.image(200, 312, 'hoop');
+    this.add.image(200, 100, 'hoop');
     this.add.image(200, 500, 'ball');
     
     function unlockAudio() {
@@ -72,10 +75,11 @@ function create() {
     
     document.addEventListener('click', unlockAudio, { once: true });
     document.addEventListener('touchstart', unlockAudio, { once: true });
+    console.log("Jogo criado com sucesso!");
 }
 
 function update() {
-    // Lógica do jogo aqui
+    console.log("Atualizando jogo...");
 }
 
 function playSound(sound) {
