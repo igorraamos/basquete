@@ -51,24 +51,37 @@
     </style>
 </head>
 <body>
+
 <script type="text/javascript">
 var screenWidth = window.innerWidth;
 var screenHeight = window.innerHeight;
 var mobile = screenWidth <= 750;
 var game;
 
+// Variáveis do jogo
 var hoop, left_rim, right_rim, ball, front_rim;
 var current_score = 0, current_score_text, high_score = 0, high_score_text, current_best_text;
 var score_sound, backboard, whoosh, fail, spawn;
+var moveInTween, fadeInTween, moveOutTween, fadeOutTween, emoji, emojiName;
 var collisionGroup;
+var location_interval;
+var isDown = false;
+var start_location;
+var end_location;
 
-window.onload = function() {
-    game = new Phaser.Game(mobile ? screenWidth : 400, mobile ? screenHeight : 625, Phaser.CANVAS, '', { 
+if (mobile) {
+    game = new Phaser.Game(screenWidth, screenHeight, Phaser.CANVAS, '', { 
         preload: preload, 
         create: create, 
         update: update 
     });
-};
+} else {
+    game = new Phaser.Game(400, 625, Phaser.CANVAS, '', { 
+        preload: preload, 
+        create: create, 
+        update: update 
+    });
+}
 
 function preload() {
     game.load.image('ball', 'assets/images/ball.png');
@@ -91,6 +104,7 @@ function create() {
 
     collisionGroup = game.physics.p2.createCollisionGroup();
 
+    // Inicialização do áudio
     score_sound = game.add.audio('score');
     backboard = game.add.audio('backboard');
     backboard.volume = 0.5;
@@ -99,21 +113,14 @@ function create() {
     fail.volume = 0.1;
     spawn = game.add.audio('spawn');
 
-    // Garantia de desbloqueio do áudio no primeiro toque
-    game.input.onDown.add(unlockAudio, this);
-}
-
-function update() {
-    // Lógica do jogo
-}
-
-function unlockAudio() {
-    if (game.sound.context && game.sound.context.state === 'suspended') {
-        game.sound.context.resume().then(() => {
-            console.log("Áudio desbloqueado");
-        });
+    // Configuração para dispositivos móveis
+    if (!game.device.desktop) {
+        document.addEventListener('touchstart', function() {
+            if (game.sound && game.sound.context) {
+                game.sound.context.resume();
+            }
+        }, false);
     }
-    game.input.onDown.remove(unlockAudio, this);
 }
 </script>
 </body>
