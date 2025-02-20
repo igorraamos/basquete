@@ -33,7 +33,11 @@
 <body>
 
 <script type="text/javascript">
-var game = new Phaser.Game(400, 625, Phaser.CANVAS, '', { preload: preload, create: create, update: update });
+var game;
+
+document.addEventListener("DOMContentLoaded", function() {
+    game = new Phaser.Game(400, 625, Phaser.CANVAS, '', { preload: preload, create: create, update: update });
+});
 
 var score_sound, backboard, whoosh, fail, spawn;
 
@@ -46,7 +50,6 @@ function preload() {
 }
 
 function create() {
-    // Inicialização do sistema de áudio
     game.sound.mute = false;
     score_sound = game.add.audio('score');
     backboard = game.add.audio('backboard');
@@ -54,14 +57,12 @@ function create() {
     fail = game.add.audio('fail');
     spawn = game.add.audio('spawn');
 
-    // Permite múltiplas execuções
     score_sound.allowMultiple = true;
     backboard.allowMultiple = true;
     whoosh.allowMultiple = true;
     fail.allowMultiple = true;
     spawn.allowMultiple = true;
     
-    // Resolver bloqueio de áudio em iOS
     function unlockAudio() {
         if (game.sound.context && game.sound.context.state === 'suspended') {
             game.sound.context.resume().then(() => {
@@ -69,7 +70,6 @@ function create() {
             }).catch(err => console.log('Erro ao desbloquear áudio:', err));
         }
         
-        // Chamar unlock do Phaser
         if (game.sound.unlock) {
             game.sound.unlock();
         }
@@ -77,6 +77,10 @@ function create() {
     
     document.addEventListener('click', unlockAudio, { once: true });
     document.addEventListener('touchstart', unlockAudio, { once: true });
+}
+
+function update() {
+    // Lógica do jogo aqui
 }
 
 function playSound(sound) {
