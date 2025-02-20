@@ -1,313 +1,56 @@
 <!doctype html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Basquete Anota AI</title>
-  <link rel="icon" type="image/png" href="assets/images/ball.png">
-  <script src="https://cdn.jsdelivr.net/npm/phaser@2.6.2/build/phaser.min.js"></script>
-  <style type="text/css">
-    body {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      max-width: 100vw;
-      height: 100vh;
-      margin: 0;
-      box-sizing: border-box;
-      background-image: url('assets/images/fundoGame.svg');
-      background-repeat: no-repeat;
-      background-size: cover;
-      background-color: #009aff;
-      font-family: Arial, Helvetica, sans-serif;
-    }
-    canvas {
-      border: 2px solid rgb(243, 243, 243);
-      border-radius: 10px;
-      object-fit: cover;
-      width: 100% !important;
-      max-width: 400px !important;
-    }
-    @media screen and (max-width: 750px) {
-      body {
-        padding: 0;
-        background-image: none;
-      }
-      canvas {
-        margin: 0;
-        padding: 0;
-        border: none;
-      }
-    }
-    @media screen and (min-height: 625px) and (max-width: 750px) {
-      canvas {
-        margin-top: 7vh;
-      }
-    }
-  </style>
+  <!-- [mantenha o head como está] -->
 </head>
 <body>
   <script type="text/javascript">
-    // Variáveis globais
-    var game;
-    var ball;
-    var currentScore = 0;
-    var bestScoreCookie = 0;
-    var isDown = false;
-    var startLocation;
-    var endLocation;
-    var locationInterval;
-    var frontRim;
-    var collisionGroup;
-    var scoreSound;
-    var backboard;
-    var whoosh;
-    var fail;
-    var spawn;
-    var mobile;
-    var screenWidth;
-    var currentScoreText;
-    var currentBestText;
-    var currentBestScoreText;
-
-    // Função para habilitar áudio no iOS
-    function enableMobileAudio() {
-      if (mobile) {
-        // Criar buffer de áudio vazio
-        var audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        var buffer = audioContext.createBuffer(1, 1, 22050);
-        var source = audioContext.createBufferSource();
-        source.buffer = buffer;
-        source.connect(audioContext.destination);
-        source.start(0);
-
-        // Habilitar áudio ao toque na tela
-        window.addEventListener('touchstart', function() {
-          if (audioContext.state === 'suspended') {
-            audioContext.resume();
-          }
-        }, false);
-      }
-    }
+    // [mantenha as variáveis globais como estão]
 
     function preload() {
-      console.log('Carregando assets...');
       try {
-        // Carregar imagens
-        game.load.image('ball', 'assets/images/ball.png');
-        game.load.image('hoop', 'assets/images/hoop.png');
-        game.load.image('side_rim', 'assets/images/side_rim.png');
-        game.load.image('front_rim', 'assets/images/front_rim.png');
-        
-        // Carregar imagens de vitória e derrota
-        for (var i = 0; i < 5; i++) {
-          game.load.image('win' + i, 'assets/images/win' + i + '.png');
-          game.load.image('lose' + i, 'assets/images/lose' + i + '.png');
-        }
-        
-        // Carregar áudios com volume mais alto para mobile
-        game.load.audio('score', ['assets/audio/score.wav']);
-        game.load.audio('backboard', ['assets/audio/backboard.wav']);
-        game.load.audio('whoosh', ['assets/audio/whoosh.wav']);
-        game.load.audio('fail', ['assets/audio/fail.wav']);
-        game.load.audio('spawn', ['assets/audio/spawn.wav']);
+        // Carregar imagens [mantenha como está]
+
+        // Modificar o carregamento de áudio para o formato mais simples
+        game.load.audio('score', 'assets/audio/score.wav');
+        game.load.audio('backboard', 'assets/audio/backboard.wav');
+        game.load.audio('whoosh', 'assets/audio/whoosh.wav');
+        game.load.audio('fail', 'assets/audio/fail.wav');
+        game.load.audio('spawn', 'assets/audio/spawn.wav');
       } catch (error) {
         console.error('Erro ao carregar assets:', error);
       }
     }
 
     function create() {
-      console.log('Criando jogo...');
       try {
-        // Configurar física
-        game.physics.startSystem(Phaser.Physics.P2JS);
-        game.physics.p2.setImpactEvents(true);
-        game.physics.p2.restitution = 0.63;
-        game.physics.p2.gravity.y = 0;
+        // Configurar física [mantenha como está]
 
-        collisionGroup = game.physics.p2.createCollisionGroup();
-        screenWidth = window.innerWidth;
-
-        // Configurar sons com volume adequado
-        scoreSound = game.add.audio('score', 1);
-        backboard = game.add.audio('backboard', 0.8);
+        // Modificar a inicialização do áudio
+        game.sound.boot(); // Adicionar esta linha
+        
+        score_sound = game.add.audio('score', 1);
+        backboard = game.add.audio('backboard', 0.5);
         whoosh = game.add.audio('whoosh', 1);
-        fail = game.add.audio('fail', 0.5);
-        spawn = game.add.audio('spawn', 0.8);
+        fail = game.add.audio('fail', 0.1);
+        spawn = game.add.audio('spawn', 1);
 
-        // Habilitar sistema de áudio HTML5
-        game.sound.usingWebAudio = true;
-        game.sound.usingAudioTag = false;
+        // Habilitar áudio para dispositivos móveis
+        if (mobile) {
+          game.input.touch.preventDefault = false;
+          game.sound.touchUnlock = function() {
+            if (game.sound.usingWebAudio && game.sound.context.state === 'suspended') {
+              game.input.onTap.addOnce(function() {
+                game.sound.context.resume();
+              });
+            }
+          };
+          game.sound.touchUnlock();
+        }
 
-        // Configurar fundo e interface
-        game.stage.backgroundColor = '#009aff';
-        setupScoreTexts();
-        setupHoop(mobile, screenWidth, collisionGroup);
-        createBall();
-
-        // Configurar eventos de input
-        game.input.onDown.add(click, this);
-        game.input.onUp.add(release, this);
-
-        // Habilitar áudio para mobile
-        enableMobileAudio();
+        // [resto do create como está]
       } catch (error) {
         console.error('Erro ao criar jogo:', error);
-      }
-    }
-
-    function setupScoreTexts() {
-      // Pontuação atual (no topo)
-      currentScoreText = game.add.text(20, 20, '', {
-        font: 'bold 48px Arial',
-        fill: '#fff',
-        align: 'left'
-      });
-
-      // Melhor pontuação (abaixo, sem sobreposição)
-      currentBestText = game.add.text(20, 80, 'Melhor pontuação:', {
-        font: '20px Arial',
-        fill: '#fff',
-        align: 'left'
-      });
-
-      currentBestScoreText = game.add.text(170, 80, getCookie(), {
-        font: '20px Arial',
-        fill: '#fff',
-        align: 'left'
-      });
-    }
-
-    // [O resto das funções permanece o mesmo]
-
-    function update() {
-      try {
-        if (ball && ball.body.velocity.y > 0) {
-          if (mobile) {
-            frontRim = game.add.sprite((screenWidth / 2) - 83, 186, 'front_rim');
-          } else {
-            frontRim = game.add.sprite(117, 187, 'front_rim');
-          }
-          ball.body.collides([collisionGroup], hitRim, this);
-        }
-
-        if (ball && ball.body.velocity.y > 0 && ball.body.y > 188 && !ball.isBelowHoop) {
-          ball.isBelowHoop = true;
-          ball.body.collideWorldBounds = false;
-          var rand = Math.floor(Math.random() * 5);
-          
-          if (ball.body.x > (mobile ? (screenWidth / 2) - 49 : 151) && 
-              ball.body.x < (mobile ? (screenWidth / 2) + 49 : 249)) {
-            var emojiName = "win" + rand;
-            currentScore += 1;
-            currentScoreText.text = currentScore;
-            scoreSound.play();
-            if (currentScore > bestScoreCookie) {
-              setCookie(currentScore);
-            }
-          } else {
-            var emojiName = "lose" + rand;
-            fail.play();
-            currentScore = 0;
-            currentScoreText.text = '';
-            currentBestText.text = 'Melhor pontuação:';
-            currentBestScoreText.text = getCookie();
-          }
-          
-          var emoji = game.add.sprite(mobile ? (screenWidth / 2) - 20 : 180, 100, emojiName);
-          emoji.scale.setTo(0.25, 0.25);
-          
-          var moveInTween = game.add.tween(emoji).from({y: 150}, 500, Phaser.Easing.Elastic.Out, true);
-          var fadeInTween = game.add.tween(emoji).from({alpha: 0}, 200, Phaser.Easing.Linear.None, true);
-          
-          moveInTween.onComplete.add(function() {
-            var moveOutTween = game.add.tween(emoji).to({y: 50}, 600, Phaser.Easing.Elastic.In, true);
-            moveOutTween.onComplete.add(function() {
-              emoji.kill();
-            });
-            
-            setTimeout(function() {
-              game.add.tween(emoji).to({alpha: 0}, 300, Phaser.Easing.Linear.None, true);
-            }, 450);
-          });
-        }
-
-        if (ball && ball.body.y > 1200) {
-          game.physics.p2.gravity.y = 0;
-          ball.kill();
-          createBall();
-        }
-      } catch (error) {
-        console.error('Erro na função update:', error);
-      }
-    }
-
-    function setupHoop(mobile, screenWidth, collisionGroup) {
-      var hoopX = mobile ? (screenWidth / 2) - 112 : 88;
-      var leftRimX = mobile ? (screenWidth / 2) - 82 : 119;
-      var rightRimX = mobile ? (screenWidth / 2) + 82 : 282;
-
-      var hoop = game.add.sprite(hoopX, 62, 'hoop');
-      var leftRim = game.add.sprite(leftRimX, 190, 'side_rim');
-      var rightRim = game.add.sprite(rightRimX, 190, 'side_rim');
-
-      setupRim(leftRim, collisionGroup);
-      setupRim(rightRim, collisionGroup);
-    }
-
-    function setupRim(rim, collisionGroup) {
-      game.physics.p2.enable(rim, false);
-      rim.body.setCircle(2.5);
-      rim.body.static = true;
-      rim.body.setCollisionGroup(collisionGroup);
-      rim.body.collides([collisionGroup]);
-    }
-
-    function hitRim() {
-      if (backboard) {
-        backboard.play();
-      }
-    }
-
-    function createBall() {
-      var xpos = currentScore === 0 ? (mobile ? screenWidth / 2 : 200) : 60 + Math.random() * 250;
-      ball = game.add.sprite(xpos, 547, 'ball');
-      game.add.tween(ball.scale).from({x: 0.7, y: 0.7}, 100, Phaser.Easing.Linear.None, true);
-      
-      game.physics.p2.enable(ball, false);
-      ball.body.setCircle(36);
-      ball.body.setCollisionGroup(collisionGroup);
-      ball.body.collides([collisionGroup]);
-      ball.launched = false;
-      ball.isBelowHoop = false;
-      
-      if (spawn) {
-        spawn.play();
-      }
-    }
-
-    function click(pointer) {
-      var bodies = game.physics.p2.hitTest(pointer.position, [ball.body]);
-      if (bodies.length) {
-        startLocation = [pointer.x, pointer.y];
-        isDown = true;
-        locationInterval = setInterval(function() {
-          startLocation = [pointer.x, pointer.y];
-        }, 200);
-      }
-    }
-
-    function release(pointer) {
-      if (isDown) {
-        clearInterval(locationInterval);
-        isDown = false;
-        endLocation = [pointer.x, pointer.y];
-        if (endLocation[1] < startLocation[1]) {
-          var slope = [endLocation[0] - startLocation[0], endLocation[1] - startLocation[1]];
-          var xTraj = -800 * slope[0] / slope[1];
-          launch(xTraj);
-        }
       }
     }
 
@@ -318,42 +61,27 @@
         ball.body.velocity.x = xTraj;
         ball.body.velocity.y = -1750;
         ball.body.rotateRight(xTraj / 3);
-        if (whoosh) {
+        
+        // Modificar a reprodução do som
+        try {
           whoosh.play();
+        } catch (e) {
+          console.log('Erro ao tocar som:', e);
         }
       }
     }
 
-    function getCookie() {
+    function hitRim() {
       try {
-        if (!document.cookie.includes('BestScore')) {
-          document.cookie = 'BestScore=0';
-          return '0';
-        }
-        var score = '0';
-        document.cookie.split(';').forEach(function(cookie) {
-          if (cookie.includes('BestScore')) {
-            score = cookie.split('=')[1];
-          }
-        });
-        return score;
-      } catch (error) {
-        console.error('Erro ao ler cookie:', error);
-        return '0';
+        backboard.play();
+      } catch (e) {
+        console.log('Erro ao tocar som:', e);
       }
     }
 
-    function setCookie(newBestScore) {
-      try {
-        document.cookie = `BestScore=${newBestScore}`;
-        bestScoreCookie = newBestScore;
-        currentBestScoreText.text = newBestScore;
-      } catch (error) {
-        console.error('Erro ao salvar cookie:', error);
-      }
-    }
+    // [mantenha o resto das funções como estão]
 
-    // Inicialização do jogo
+    // Modificar a inicialização do jogo
     window.onload = function() {
       if (typeof Phaser === 'undefined') {
         console.error('Erro: Phaser não foi carregado!');
@@ -366,6 +94,7 @@
       mobile = screenWidth <= 750;
 
       try {
+        // Adicionar configurações de áudio ao criar o jogo
         game = new Phaser.Game(
           mobile ? screenWidth : 400,
           mobile ? screenHeight : 625,
@@ -375,8 +104,24 @@
             preload: preload,
             create: create,
             update: update
+          },
+          false, // transparente
+          false, // antialias
+          {
+            // Configurações de áudio
+            noAudio: false,
+            disableWebAudio: false
           }
         );
+        
+        // Adicionar evento de toque para iOS
+        if (mobile) {
+          document.addEventListener('touchstart', function() {
+            if (game.sound && game.sound.context && game.sound.context.state === 'suspended') {
+              game.sound.context.resume();
+            }
+          });
+        }
       } catch (error) {
         console.error('Erro ao inicializar o jogo:', error);
         document.body.innerHTML = '<p style="color: white; text-align: center;">Erro ao inicializar o jogo. Por favor, recarregue a página.</p>';
