@@ -19,10 +19,11 @@
 </head>
 <body>
 <script>
-var game, score_sound, backboard, whoosh, fail, spawn;
+var game, score_sound, backboard, whoosh, fail, spawn, ball;
 var screenWidth = window.innerWidth;
 var screenHeight = window.innerHeight;
 var mobile = screenWidth <= 750;
+var start_location, end_location, isDown = false;
 
 function getCookie() {
     var scoreCookie = document.cookie.split('; ').find(row => row.startsWith('BestScore='));
@@ -61,15 +62,48 @@ function create() {
     var hoop = game.add.sprite(game.world.centerX, 100, 'hoop');
     hoop.anchor.set(0.5);
     
-    var ball = game.add.sprite(game.world.centerX, game.world.height - 100, 'ball');
+    ball = game.add.sprite(game.world.centerX, game.world.height - 100, 'ball');
     ball.anchor.set(0.5);
     game.physics.arcade.enable(ball);
     ball.body.collideWorldBounds = true;
     ball.body.bounce.set(0.8);
+    ball.body.gravity.y = 1000;
+
+    game.input.onDown.add(startDrag, this);
+    game.input.onUp.add(releaseDrag, this);
+}
+
+function startDrag(pointer) {
+    if (Phaser.Rectangle.contains(ball.getBounds(), pointer.x, pointer.y)) {
+        start_location = { x: pointer.x, y: pointer.y };
+        isDown = true;
+    }
+}
+
+function releaseDrag(pointer) {
+    if (isDown) {
+        isDown = false;
+        end_location = { x: pointer.x, y: pointer.y };
+
+        if (end_location.y < start_location.y) {
+            var x_traj = (end_location.x - start_location.x) * 4;
+            var y_traj = (end_location.y - start_location.y) * -6;
+            launchBall(x_traj, y_traj);
+        }
+    }
+}
+
+function launchBall(x_traj, y_traj) {
+    ball.body.velocity.x = x_traj;
+    ball.body.velocity.y = y_traj;
+    whoosh.play();
 }
 
 function update() {
-    // Lógica do jogo
+    if (ball.y > game.world.height) {
+        ball.reset(game.world.centerX, game.world.height - 100);
+        ball.body.velocity.set(0);
+    }
 }
 
 window.onload = function() {
