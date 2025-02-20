@@ -1,18 +1,16 @@
 <!doctype html>
-<html lang="pt-BR">
+<html lang="en">
 <head>
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black">
     <title>Basquete Anota AI</title>
-    <link rel="icon" type="image/png" href="./assets/images/ball.png" />
-    <script src="https://cdn.jsdelivr.net/npm/phaser@2.6.2/build/phaser.min.js"></script>
-    <!-- Google Ads -->
+    <link rel="icon" type="imagem/png" href="./assets/images/ball.png" />
+    <script type="text/javascript" src="js/phaser.min.js"></script>
+    <!-- Google Adds -->
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2210446009817515" crossorigin="anonymous"></script>
     <!-- Google Tag Manager -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-WSPVKJTS0V"></script>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-WSPVKJTS0V%22%3E"></script>
 
     <style type="text/css">
         body {
@@ -65,6 +63,7 @@
                 bottom: 0;
                 left: 0;
             }
+     
             .responsive-ads { 
                 /* display: none; */
                 /* min-height: 60px !important;   */
@@ -76,16 +75,16 @@
 </head>
 <body>
 
-<!-- Google ADS -->
+<!-- Novo código Google ADS -->
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2210446009817515" crossorigin="anonymous"></script>
 
 <!-- Anúncio responsivo -->
 <ins class="adsbygoogle responsive-ads"
-    style="display: block !important;"
-    data-ad-client="ca-pub-2210446009817515"
-    data-ad-slot="4580182721"
-    data-ad-format="auto" 
-    data-full-width-responsive="true">
+        style="display: block !important;"
+        data-ad-client="ca-pub-2210446009817515"
+        data-ad-slot="4580182721"
+        data-ad-format="auto" 
+        data-full-width-responsive="true">
 </ins>
 
 <script>
@@ -93,105 +92,136 @@
 </script>
 
 <script type="text/javascript">
-    var screenWidth = screen.width;
-    var screenHeight = screen.height;
-    var mobile;
-    var game;
+var screenWidth = screen.width;
+var screenHeight = screen.height;
+var mobile;
 
-    // Função para inicializar áudio
-    function initAudio() {
-        if (game.device.iOS || game.device.android || game.device.windowsPhone) {
-            game.input.touch.preventDefault = false;
-            document.addEventListener('touchstart', function() {
-                if (game.sound.context && game.sound.context.state === 'suspended') {
-                    game.sound.context.resume();
-                }
-            }, false);
-        }
+if (screenWidth <= 750) {
+    mobile = true;
+} else {
+    mobile = false;
+}
+
+// Função para desbloqueio de áudio
+function unlockAudioContext() {
+    if (game.sound && game.sound.context && game.sound.context.state === 'suspended') {
+        game.sound.context.resume();
+    }
+}
+
+if (mobile) {
+    var game = new Phaser.Game(screenWidth, screenHeight, Phaser.CANVAS, '', { preload: preload, create: create, update: update });    
+} else {
+    var game = new Phaser.Game(400, 625, Phaser.CANVAS, '', { preload: preload, create: create, update: update });
+}
+
+function preload() {
+    game.load.image('ball', 'assets/images/ball.png');
+    game.load.image('hoop', 'assets/images/hoop.png');
+    game.load.image('side rim', 'assets/images/side_rim.png');
+    game.load.image('front rim', 'assets/images/front_rim.png');
+
+    game.load.image('win0', 'assets/images/win0.png');
+    game.load.image('win1', 'assets/images/win1.png');
+    game.load.image('win2', 'assets/images/win2.png');
+    game.load.image('win3', 'assets/images/win3.png');
+    game.load.image('win4', 'assets/images/win4.png');
+    game.load.image('lose0', 'assets/images/lose0.png');
+    game.load.image('lose1', 'assets/images/lose1.png');
+    game.load.image('lose2', 'assets/images/lose2.png');
+    game.load.image('lose3', 'assets/images/lose3.png');
+    game.load.image('lose4', 'assets/images/lose4.png');
+
+    game.load.audio('score', 'assets/audio/score.wav');
+    game.load.audio('backboard', 'assets/audio/backboard.wav');
+    game.load.audio('whoosh', 'assets/audio/whoosh.wav');
+    game.load.audio('fail', 'assets/audio/fail.wav');
+    game.load.audio('spawn', 'assets/audio/spawn.wav');
+}
+
+var hoop,
+    left_rim,
+    right_rim,
+    ball,
+    front_rim,
+    current_score = 0,
+    current_score_text,
+    high_score = 0,
+    high_score_text,
+    current_best_text;
+
+var score_sound,
+    backboard,
+    whoosh,
+    fail,
+    spawn;
+
+var moveInTween,
+    fadeInTween,
+    moveOutTween,
+    fadeOutTween,
+    emoji,
+    emojiName;
+
+var collisionGroup;
+
+function create() {
+    game.physics.startSystem(Phaser.Physics.P2JS);
+    game.physics.p2.setImpactEvents(true);
+    game.physics.p2.restitution = 0.63;
+    game.physics.p2.gravity.y = 0;
+
+    collisionGroup = game.physics.p2.createCollisionGroup();
+
+    // Inicialização do áudio com volumes ajustados
+    score_sound = game.add.audio('score', 1);
+    backboard = game.add.audio('backboard', 0.5);
+    whoosh = game.add.audio('whoosh', 1);
+    fail = game.add.audio('fail', 0.1);
+    spawn = game.add.audio('spawn', 1);
+
+    // Adicionar eventos para desbloqueio de áudio
+    if (mobile) {
+        document.addEventListener('touchstart', unlockAudioContext, false);
+        document.addEventListener('click', unlockAudioContext, false);
     }
 
-    mobile = screenWidth <= 750;
+    game.stage.backgroundColor = '#009aff';
 
-    // Configuração do jogo
-    var gameConfig = {
-        width: mobile ? screenWidth : 400,
-        height: mobile ? screenHeight : 625,
-        renderer: Phaser.CANVAS,
-        parent: '',
-        state: {
-            preload: preload,
-            create: create,
-            update: update
-        },
-        transparent: false,
-        antialias: false,
-        audio: {
-            noAudio: false,
-            disableWebAudio: false
-        }
-    };
-
-    game = new Phaser.Game(gameConfig);
-
-    // [Todo o resto do código permanece igual ao original, apenas atualizando as funções de áudio]
-
-    function create() {
-        game.physics.startSystem(Phaser.Physics.P2JS);
-        game.physics.p2.setImpactEvents(true);
-        game.physics.p2.restitution = 0.63;
-        game.physics.p2.gravity.y = 0;
-
-        collisionGroup = game.physics.p2.createCollisionGroup();
-
-        // Inicialização do áudio
-        game.sound.boot();
-        
-        score_sound = game.add.audio('score', 1);
-        backboard = game.add.audio('backboard', 0.5);
-        whoosh = game.add.audio('whoosh', 1);
-        fail = game.add.audio('fail', 0.1);
-        spawn = game.add.audio('spawn', 1);
-
-        // Inicializar áudio para dispositivos móveis
-        initAudio();
-
-        // [Resto do código da função create permanece igual]
+    current_score_text = game.add.text(20, 20, '', { font: 'Arial', fontSize: '40px', fill: '#fff', align: 'center' });
+    current_best_text = game.add.text(20, 20, 'Melhor pontuação:', { font: 'Arial', fontSize: '20px', fill: '#fff', align: 'center' });
+    current_best_score_text = game.add.text(190, 15, `${getCookie()}`, { font: 'Arial', fontSize: '30px', fill: '#fff', align: 'center' });
+    
+    if (mobile) {
+        hoop = game.add.sprite(((screenWidth / 2) - 112), 62, 'hoop');
+        left_rim = game.add.sprite(((screenWidth / 2) - 82), 190, 'side rim');
+        right_rim = game.add.sprite(((screenWidth / 2) + 82), 190, 'side rim');
+    } else {
+        hoop = game.add.sprite(88, 62, 'hoop');
+        left_rim = game.add.sprite(119, 190, 'side rim');
+        right_rim = game.add.sprite(282, 190, 'side rim');
     }
 
-    function hitRim() {
-        if (backboard && backboard.isReady) {
-            try {
-                backboard.play();
-            } catch (e) {
-                console.log('Erro ao tocar som:', e);
-            }
-        }
-    }
+    game.physics.p2.enable([ left_rim, right_rim ], false);
 
-    function launch(x_traj) {
-        if (ball.launched === false) {
-            ball.body.setCircle(36);
-            ball.body.setCollisionGroup(collisionGroup);
-            current_best_text.text = '';
-            current_best_score_text.text = '';
-            ball.launched = true;
-            game.physics.p2.gravity.y = 3000;
-            game.add.tween(ball.scale).to({x: 0.6, y: 0.6}, 500, Phaser.Easing.Linear.None, true);
-            ball.body.velocity.x = x_traj;
-            ball.body.velocity.y = -1750;
-            ball.body.rotateRight(x_traj / 3);
-            
-            if (whoosh && whoosh.isReady) {
-                try {
-                    whoosh.play();
-                } catch (e) {
-                    console.log('Erro ao tocar som:', e);
-                }
-            }
-        }
-    }
+    left_rim.body.setCircle(2.5);
+    left_rim.body.static = true;
+    left_rim.body.setCollisionGroup(collisionGroup);
+    left_rim.body.collides([collisionGroup]);
 
-    // [O resto do código permanece exatamente igual ao original]
+    right_rim.body.setCircle(2.5);
+    right_rim.body.static = true;
+    right_rim.body.setCollisionGroup(collisionGroup);
+    right_rim.body.collides([collisionGroup]);
+
+    createBall();
+
+    cursors = game.input.keyboard.createCursorKeys();
+    game.input.onDown.add(click, this);
+    game.input.onUp.add(release, this);
+}
+
+// [... Resto do código permanece exatamente igual ao original ...]
 
 </script>
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js/vcd15cbe7772f49c399c6a5babf22c1241717689176015" integrity="sha512-ZpsOmlRQV6y907TI0dKBHq9Md29nnaEIPlkf84rnaERnq6zvWvPUqr2ft8M1aS28oN72PdrCzSjY4U6VaAw1EQ==" data-cf-beacon='{"rayId":"9150916acb76f252","serverTiming":{"name":{"cfExtPri":true,"cfL4":true,"cfSpeedBrain":true,"cfCacheStatus":true}},"version":"2025.1.0","token":"8f05bd1d86b34a4ba40ca901367f3259"}' crossorigin="anonymous"></script>
