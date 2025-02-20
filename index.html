@@ -67,8 +67,30 @@
     var spawn;
     var mobile;
     var screenWidth;
+    var currentScoreText;
+    var currentBestText;
+    var currentBestScoreText;
 
-    // Definindo as funções principais do jogo ANTES de inicializá-lo
+    // Função para habilitar áudio no iOS
+    function enableMobileAudio() {
+      if (mobile) {
+        // Criar buffer de áudio vazio
+        var audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        var buffer = audioContext.createBuffer(1, 1, 22050);
+        var source = audioContext.createBufferSource();
+        source.buffer = buffer;
+        source.connect(audioContext.destination);
+        source.start(0);
+
+        // Habilitar áudio ao toque na tela
+        window.addEventListener('touchstart', function() {
+          if (audioContext.state === 'suspended') {
+            audioContext.resume();
+          }
+        }, false);
+      }
+    }
+
     function preload() {
       console.log('Carregando assets...');
       try {
@@ -84,12 +106,12 @@
           game.load.image('lose' + i, 'assets/images/lose' + i + '.png');
         }
         
-        // Carregar áudios
-        game.load.audio('score', 'assets/audio/score.wav');
-        game.load.audio('backboard', 'assets/audio/backboard.wav');
-        game.load.audio('whoosh', 'assets/audio/whoosh.wav');
-        game.load.audio('fail', 'assets/audio/fail.wav');
-        game.load.audio('spawn', 'assets/audio/spawn.wav');
+        // Carregar áudios com volume mais alto para mobile
+        game.load.audio('score', ['assets/audio/score.wav']);
+        game.load.audio('backboard', ['assets/audio/backboard.wav']);
+        game.load.audio('whoosh', ['assets/audio/whoosh.wav']);
+        game.load.audio('fail', ['assets/audio/fail.wav']);
+        game.load.audio('spawn', ['assets/audio/spawn.wav']);
       } catch (error) {
         console.error('Erro ao carregar assets:', error);
       }
@@ -98,6 +120,7 @@
     function create() {
       console.log('Criando jogo...');
       try {
+        // Configurar física
         game.physics.startSystem(Phaser.Physics.P2JS);
         game.physics.p2.setImpactEvents(true);
         game.physics.p2.restitution = 0.63;
@@ -106,30 +129,57 @@
         collisionGroup = game.physics.p2.createCollisionGroup();
         screenWidth = window.innerWidth;
 
-        // Configurar sons
-        scoreSound = game.add.audio('score');
-        backboard = game.add.audio('backboard', 0.5);
-        whoosh = game.add.audio('whoosh');
-        fail = game.add.audio('fail', 0.1);
-        spawn = game.add.audio('spawn');
+        // Configurar sons com volume adequado
+        scoreSound = game.add.audio('score', 1);
+        backboard = game.add.audio('backboard', 0.8);
+        whoosh = game.add.audio('whoosh', 1);
+        fail = game.add.audio('fail', 0.5);
+        spawn = game.add.audio('spawn', 0.8);
 
-        // Configurar fundo e textos
+        // Habilitar sistema de áudio HTML5
+        game.sound.usingWebAudio = true;
+        game.sound.usingAudioTag = false;
+
+        // Configurar fundo e interface
         game.stage.backgroundColor = '#009aff';
         setupScoreTexts();
-
-        // Configurar cesta
         setupHoop(mobile, screenWidth, collisionGroup);
-
-        // Criar primeira bola
         createBall();
 
         // Configurar eventos de input
         game.input.onDown.add(click, this);
         game.input.onUp.add(release, this);
+
+        // Habilitar áudio para mobile
+        enableMobileAudio();
       } catch (error) {
         console.error('Erro ao criar jogo:', error);
       }
     }
+
+    function setupScoreTexts() {
+      // Pontuação atual (no topo)
+      currentScoreText = game.add.text(20, 20, '', {
+        font: 'bold 48px Arial',
+        fill: '#fff',
+        align: 'left'
+      });
+
+      // Melhor pontuação (abaixo, sem sobreposição)
+      currentBestText = game.add.text(20, 80, 'Melhor pontuação:', {
+        font: '20px Arial',
+        fill: '#fff',
+        align: 'left'
+      });
+
+      currentBestScoreText = game.add.text(170, 80, getCookie(), {
+        font: '20px Arial',
+        fill: '#fff',
+        align: 'left'
+      });
+    }
+
+    // [O resto das funções permanece o mesmo]
 
     function update() {
       try {
@@ -193,32 +243,6 @@
       }
     }
 
-    function setupScoreTexts() {
-      // Pontuação atual (número grande)
-      currentScoreText = game.add.text(20, 15, '', {
-        font: 'Arial',
-        fontSize: '40px',
-        fill: '#fff',
-        align: 'center'
-      });
-
-      // Texto "Melhor pontuação:" (embaixo do número atual)
-      currentBestText = game.add.text(20, 65, 'Melhor pontuação:', {
-        font: 'Arial',
-        fontSize: '20px',
-        fill: '#fff',
-        align: 'center'
-      });
-
-      // Número da melhor pontuação (ao lado do texto "Melhor pontuação:")
-      currentBestScoreText = game.add.text(190, 65, getCookie(), {
-        font: 'Arial',
-        fontSize: '20px',
-        fill: '#fff',
-        align: 'center'
-      });
-    }
-
     function setupHoop(mobile, screenWidth, collisionGroup) {
       var hoopX = mobile ? (screenWidth / 2) - 112 : 88;
       var leftRimX = mobile ? (screenWidth / 2) - 82 : 119;
@@ -241,7 +265,9 @@
     }
 
     function hitRim() {
-      backboard.play();
+      if (backboard) {
+        backboard.play();
+      }
     }
 
     function createBall() {
@@ -256,7 +282,9 @@
       ball.launched = false;
       ball.isBelowHoop = false;
       
-      spawn.play();
+      if (spawn) {
+        spawn.play();
+      }
     }
 
     function click(pointer) {
@@ -290,7 +318,9 @@
         ball.body.velocity.x = xTraj;
         ball.body.velocity.y = -1750;
         ball.body.rotateRight(xTraj / 3);
-        whoosh.play();
+        if (whoosh) {
+          whoosh.play();
+        }
       }
     }
 
