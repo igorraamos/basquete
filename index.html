@@ -61,6 +61,13 @@
     var endLocation;
     var locationInterval;
     var frontRim;
+    var collisionGroup;
+    var scoreSound;
+    var backboard;
+    var whoosh;
+    var fail;
+    var spawn;
+    var mobile;
 
     // Aguardar o carregamento do Phaser
     window.onload = function() {
@@ -73,7 +80,7 @@
 
       var screenWidth = window.innerWidth;
       var screenHeight = window.innerHeight;
-      var mobile = screenWidth <= 750;
+      mobile = screenWidth <= 750;
 
       try {
         game = new Phaser.Game(
@@ -127,16 +134,15 @@
         game.physics.p2.restitution = 0.63;
         game.physics.p2.gravity.y = 0;
 
-        var collisionGroup = game.physics.p2.createCollisionGroup();
+        collisionGroup = game.physics.p2.createCollisionGroup();
         var screenWidth = window.innerWidth;
-        var mobile = screenWidth <= 750;
 
         // Configurar sons
-        var scoreSound = game.add.audio('score');
-        var backboard = game.add.audio('backboard', 0.5);
-        var whoosh = game.add.audio('whoosh');
-        var fail = game.add.audio('fail', 0.1);
-        var spawn = game.add.audio('spawn');
+        scoreSound = game.add.audio('score');
+        backboard = game.add.audio('backboard', 0.5);
+        whoosh = game.add.audio('whoosh');
+        fail = game.add.audio('fail', 0.1);
+        spawn = game.add.audio('spawn');
 
         // Configurar fundo e textos
         game.stage.backgroundColor = '#009aff';
@@ -156,20 +162,78 @@
       }
     }
 
+    function update() {
+      if (ball && ball.body.velocity.y > 0) {
+        if (mobile) {
+          frontRim = game.add.sprite((window.innerWidth / 2) - 83, 186, 'front_rim');
+        } else {
+          frontRim = game.add.sprite(117, 187, 'front_rim');
+        }
+        ball.body.collides([collisionGroup], hitRim, this);
+      }
+
+      if (ball && ball.body.velocity.y > 0 && ball.body.y > 188 && !ball.isBelowHoop) {
+        ball.isBelowHoop = true;
+        ball.body.collideWorldBounds = false;
+        var rand = Math.floor(Math.random() * 5);
+        
+        if (ball.body.x > (mobile ? (window.innerWidth / 2) - 49 : 151) && 
+            ball.body.x < (mobile ? (window.innerWidth / 2) + 49 : 249)) {
+          var emojiName = "win" + rand;
+          currentScore += 1;
+          currentScoreText.text = currentScore;
+          scoreSound.play();
+          if (currentScore > bestScoreCookie) {
+            setCookie(currentScore);
+          }
+        } else {
+          var emojiName = "lose" + rand;
+          fail.play();
+          currentScore = 0;
+          currentScoreText.text = '';
+          currentBestText.text = 'Melhor pontuação:';
+          currentBestScoreText.text = getCookie();
+        }
+        
+        var emoji = game.add.sprite(mobile ? (window.innerWidth / 2) - 20 : 180, 100, emojiName);
+        emoji.scale.setTo(0.25, 0.25);
+        
+        var moveInTween = game.add.tween(emoji).from({y: 150}, 500, Phaser.Easing.Elastic.Out, true);
+        var fadeInTween = game.add.tween(emoji).from({alpha: 0}, 200, Phaser.Easing.Linear.None, true);
+        
+        moveInTween.onComplete.add(function() {
+          var moveOutTween = game.add.tween(emoji).to({y: 50}, 600, Phaser.Easing.Elastic.In, true);
+          moveOutTween.onComplete.add(function() {
+            emoji.kill();
+          });
+          
+          setTimeout(function() {
+            game.add.tween(emoji).to({alpha: 0}, 300, Phaser.Easing.Linear.None, true);
+          }, 450);
+        });
+      }
+
+      if (ball && ball.body.y > 1200) {
+        game.physics.p2.gravity.y = 0;
+        ball.kill();
+        createBall();
+      }
+    }
+
     function setupScoreTexts() {
-      window.currentScoreText = game.add.text(20, 20, '', {
+      currentScoreText = game.add.text(20, 20, '', {
         font: 'Arial',
         fontSize: '40px',
         fill: '#fff',
         align: 'center'
       });
-      window.currentBestText = game.add.text(20, 20, 'Melhor pontuação:', {
+      currentBestText = game.add.text(20, 20, 'Melhor pontuação:', {
         font: 'Arial',
         fontSize: '20px',
         fill: '#fff',
         align: 'center'
       });
-      window.currentBestScoreText = game.add.text(190, 15, getCookie(), {
+      currentBestScoreText = game.add.text(190, 15, getCookie(), {
         font: 'Arial',
         fontSize: '30px',
         fill: '#fff',
@@ -198,8 +262,60 @@
       rim.body.collides([collisionGroup]);
     }
 
-    // Resto das funções (update, click, release, etc.) permanecem as mesmas
-    // ... (mantenha o resto do seu código JavaScript original)
+    function hitRim() {
+      backboard.play();
+    }
+
+    function createBall() {
+      var screenWidth = window.innerWidth;
+      var xpos = currentScore === 0 ? (mobile ? screenWidth / 2 : 200) : 60 + Math.random() * 250;
+      ball = game.add.sprite(xpos, 547, 'ball');
+      game.add.tween(ball.scale).from({x: 0.7, y: 0.7}, 100, Phaser.Easing.Linear.None, true);
+      
+      game.physics.p2.enable(ball, false);
+      ball.body.setCircle(36);
+      ball.body.setCollisionGroup(collisionGroup);
+      ball.body.collides([collisionGroup]);
+      ball.launched = false;
+      ball.isBelowHoop = false;
+      
+      spawn.play();
+    }
+
+    function click(pointer) {
+      var bodies = game.physics.p2.hitTest(pointer.position, [ball.body]);
+      if (bodies.length) {
+        startLocation = [pointer.x, pointer.y];
+        isDown = true;
+        locationInterval = setInterval(function() {
+          startLocation = [pointer.x, pointer.y];
+        }, 200);
+      }
+    }
+
+    function release(pointer) {
+      if (isDown) {
+        clearInterval(locationInterval);
+        isDown = false;
+        endLocation = [pointer.x, pointer.y];
+        if (endLocation[1] < startLocation[1]) {
+          var slope = [endLocation[0] - startLocation[0], endLocation[1] - startLocation[1]];
+          var xTraj = -800 * slope[0] / slope[1];
+          launch(xTraj);
+        }
+      }
+    }
+
+    function launch(xTraj) {
+      if (!ball.launched) {
+        ball.launched = true;
+        game.physics.p2.gravity.y = 3000;
+        ball.body.velocity.x = xTraj;
+        ball.body.velocity.y = -1750;
+        ball.body.rotateRight(xTraj / 3);
+        whoosh.play();
+      }
+    }
 
     function getCookie() {
       try {
@@ -223,6 +339,8 @@
     function setCookie(newBestScore) {
       try {
         document.cookie = `BestScore=${newBestScore}`;
+        bestScoreCookie = newBestScore;
+        currentBestScoreText.text = newBestScore;
       } catch (error) {
         console.error('Erro ao salvar cookie:', error);
       }
