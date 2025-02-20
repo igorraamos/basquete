@@ -11,7 +11,7 @@
     <!-- Google Adds -->
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2210446009817515" crossorigin="anonymous"></script>
     <!-- Google Tag Manager -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-WSPVKJTS0V%22%3E"></script>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-WSPVKJTS0V"></script>
 
     <style type="text/css">
         body {
@@ -93,6 +93,29 @@
 </script>
 
 <script type="text/javascript">
+// Função para gerenciar áudio
+function handleAudio() {
+    if (game.device.iOS || game.device.android) {
+        document.addEventListener('touchstart', function() {
+            var context = game.sound.context;
+            if (context && context.state === 'suspended') {
+                context.resume();
+            }
+        }, false);
+    }
+}
+
+// Função para tocar sons com verificação
+function playSoundWithCheck(sound) {
+    if (sound && game.sound.context && game.sound.context.state !== 'suspended') {
+        try {
+            sound.play();
+        } catch (e) {
+            console.log('Erro ao tocar som:', e);
+        }
+    }
+}
+
 // Função para verificar se o Phaser está carregado
 function checkPhaser() {
     if (typeof Phaser === 'undefined') {
@@ -139,8 +162,7 @@ var location_interval;
 var isDown = false;
 var start_location;
 var end_location;
-
-// Funções principais do jogo
+    // Funções principais do jogo
 function preload() {
     game.load.image('ball', 'assets/images/ball.png');
     game.load.image('hoop', 'assets/images/hoop.png');
@@ -173,22 +195,25 @@ function create() {
 
     collisionGroup = game.physics.p2.createCollisionGroup();
 
-    // Inicialização do áudio
-    score_sound = game.add.audio('score');
-    backboard = game.add.audio('backboard');
-    backboard.volume = 0.5;
-    whoosh = game.add.audio('whoosh');
-    fail = game.add.audio('fail');
-    fail.volume = 0.1;
-    spawn = game.add.audio('spawn');
+    // Inicialização do áudio com tratamento de erros
+    try {
+        game.sound.boot();
+        
+        score_sound = game.add.audio('score', 1, false);
+        backboard = game.add.audio('backboard', 0.5, false);
+        whoosh = game.add.audio('whoosh', 1, false);
+        fail = game.add.audio('fail', 0.1, false);
+        spawn = game.add.audio('spawn', 1, false);
 
-    // Desbloqueio de áudio para dispositivos móveis
-    if (mobile) {
-        document.addEventListener('touchstart', function() {
-            if (game.sound.context.state === 'suspended') {
-                game.sound.context.resume();
-            }
-        }, false);
+        // Decodificar áudios
+        game.sound.setDecodedCallback([score_sound, backboard, whoosh, fail, spawn], function() {
+            console.log('Áudios decodificados com sucesso');
+        }, this);
+
+        handleAudio();
+
+    } catch (e) {
+        console.log('Erro ao inicializar áudio:', e);
     }
 
     game.stage.backgroundColor = '#009aff';
@@ -244,13 +269,13 @@ function update() {
             emojiName = "win" + rand;
             current_score += 1;
             current_score_text.text = current_score;
-            score_sound.play();
+            playSoundWithCheck(score_sound);
             if (current_score > bestScoreCookie) {
                 setCookie(current_score);
             }            
         } else {
             emojiName = "lose" + rand;
-            fail.play();
+            playSoundWithCheck(fail);
             if (current_score > high_score) {
                 high_score = current_score;
             }
@@ -286,13 +311,7 @@ function tweenOut() {
 }
 
 function hitRim() {
-    if (backboard) {
-        try {
-            backboard.play();
-        } catch (e) {
-            console.log('Erro ao tocar som:', e);
-        }
-    }
+    playSoundWithCheck(backboard);
 }
 
 function createBall() {
@@ -306,7 +325,7 @@ function createBall() {
     } else {
         xpos = 60 + Math.random() * 250;
     }
-    spawn.play();
+    playSoundWithCheck(spawn);
     ball = game.add.sprite(xpos, 547, 'ball');
     game.add.tween(ball.scale).from({x: 0.7, y: 0.7}, 100, Phaser.Easing.Linear.None, true);
     game.physics.p2.enable(ball, false);
@@ -348,22 +367,45 @@ function launch(x_traj) {
         current_best_score_text.text = '';
         ball.launched = true;
         game.physics.p2.gravity.y = 3000;
-        game.add.tween(ball.scale).to({x : 0.6, y : 0.6}, 500, Phaser.Easing.Linear.None, true, 0, 0, false);
+        game.add.tween(ball.scale).to({x: 0.6, y: 0.6}, 500, Phaser.Easing.Linear.None, true);
         ball.body.velocity.x = x_traj;
         ball.body.velocity.y = -1750;
         ball.body.rotateRight(x_traj / 3);
-        whoosh.play();
+        playSoundWithCheck(whoosh);
     }
 }
 
 // Inicialização do jogo
-if (mobile) {
-    // NOTE: Originally 640x1000. Other possible sizes: 512x800, 400x625
-    var game = new Phaser.Game(screenWidth, screenHeight, Phaser.CANVAS, '', { preload: preload, create: create, update: update });    
-} else {
-    // NOTE: Originally 640x1000. Other possible sizes: 512x800, 400x625
-    var game = new Phaser.Game(400, 625, Phaser.CANVAS, '', { preload: preload, create: create, update: update });
-}
+window.onload = function() {
+    if (!checkPhaser()) return;
+
+    try {
+        if (mobile) {
+            game = new Phaser.Game(screenWidth, screenHeight, Phaser.CANVAS, '', { 
+                preload: preload, 
+                create: create, 
+                update: update 
+            });
+        } else {
+            game = new Phaser.Game(400, 625, Phaser.CANVAS, '', { 
+                preload: preload, 
+                create: create, 
+                update: update 
+            });
+        }
+
+        // Configurações adicionais para áudio
+        if (game.device) {
+            game.sound.touchLocked = false;
+            if (game.device.iOS || game.device.android || game.device.windowsPhone) {
+                game.input.touch.preventDefault = false;
+            }
+        }
+
+    } catch (error) {
+        console.error('Erro ao inicializar o jogo:', error);
+    }
+};
 
 </script>
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js/vcd15cbe7772f49c399c6a5babf22c1241717689176015" integrity="sha512-ZpsOmlRQV6y907TI0dKBHq9Md29nnaEIPlkf84rnaERnq6zvWvPUqr2ft8M1aS28oN72PdrCzSjY4U6VaAw1EQ==" data-cf-beacon='{"rayId":"9150916acb76f252","serverTiming":{"name":{"cfExtPri":true,"cfL4":true,"cfSpeedBrain":true,"cfCacheStatus":true}},"version":"2025.1.0","token":"8f05bd1d86b34a4ba40ca901367f3259"}' crossorigin="anonymous"></script>
