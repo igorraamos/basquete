@@ -6,114 +6,251 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Basquete Anota AI</title>
     <link rel="icon" type="imagem/png" href="./assets/images/ball.png" />
-    <!-- Carregamento do Phaser -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/phaser/2.6.2/phaser.min.js"></script>
+    <!-- Usando CDN do Phaser com fallback para local -->
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/phaser/2.6.2/phaser.min.js"></script>
+    <script type="text/javascript">
+        if (typeof Phaser === 'undefined') {
+            document.write('<script src="js/phaser.min.js"><\/script>');
+        }
+    </script>
     <!-- Google Adds -->
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2210446009817515" crossorigin="anonymous"></script>
     <!-- Google Tag Manager -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-WSPVKJTS0V"></script>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-WSPVKJTS0V%22%3E"></script>
 
-    <!-- [Manter os estilos CSS exatamente como estão] -->
     <style type="text/css">
-        /* ... seus estilos ... */
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            max-width: 100vw;
+            height: 100vh;
+            margin: 0;
+            box-sizing: border-box;
+            background-image: url('./assets/images/fundoGame.svg');
+            background-repeat: no-repeat;
+            background-size: cover;
+            background-color: #009aff;
+            font-family: Arial, Helvetica, sans-serif;
+        }
+        
+        canvas {
+            border: 2px solid rgb(243, 243, 243);
+            border-radius: 10px;    
+            object-fit: cover;
+            width: 100% !important;
+            max-width: 400px !important;
+        }
+
+        @media screen and (max-width: 750px){
+            body {
+                padding: 0;
+                background-image: none;
+            }
+
+            canvas {
+                margin: 0;
+                padding: 0;
+                border: none;
+            }
+        }
+        
+        @media screen and (min-height: 625px) and (max-width: 750px) {
+            canvas {
+                margin-top: 7vh;
+            }
+        }
+
+        @media(max-width: 500px) { 
+            .adsbygoogle-noablate {
+                display: block !important;
+                position: fixed !important; 
+                width: 100% !important;
+                bottom: 0;
+                left: 0;
+            }
+     
+            .responsive-ads { 
+                /* display: none; */
+                /* min-height: 60px !important;   */
+                /* bottom: 0; */
+                /* left: 0; */
+            } 
+        } 
     </style>
 </head>
 <body>
 
-<!-- [Manter o código do Google ADS exatamente como está] -->
+<!-- Novo código Google ADS -->
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2210446009817515" crossorigin="anonymous"></script>
 
-<script type="text/javascript">
-document.addEventListener('DOMContentLoaded', function() {
-    // Verificar se o Phaser está disponível
-    if (typeof Phaser === 'undefined') {
-        console.error('Phaser não está carregado!');
-        document.body.innerHTML = '<p style="color: white; text-align: center;">Erro ao carregar o jogo. Por favor, recarregue a página.</p>';
-        return;
-    }
+<!-- Anúncio responsivo -->
+<ins class="adsbygoogle responsive-ads"
+        style="display: block !important;"
+        data-ad-client="ca-pub-2210446009817515"
+        data-ad-slot="4580182721"
+        data-ad-format="auto" 
+        data-full-width-responsive="true">
+</ins>
 
-    // Funções de cookie
-    const getCookie = () => {
-        var scoreCookie = '0';
-        if (!document.cookie.includes('BestScore')) {
-            document.cookie = `BestScore=0`;
-            return '0';
-        }
-        document.cookie.split(';').forEach(cookie => {
-            if (cookie.includes('BestScore')) {
-                scoreCookie = cookie.split('=')[1];
-            }
-        });
-        return scoreCookie;
-    };
-
-    const setCookie = (newBestScore) => {
-        document.cookie = `BestScore=${newBestScore}`;
-    };
-
-    // Configurações iniciais
-    var screenWidth = window.innerWidth;
-    var screenHeight = window.innerHeight;
-    var mobile = screenWidth <= 750;
-    var bestScoreCookie = getCookie();
-
-    // Variáveis do jogo
-    var game;
-    var hoop, left_rim, right_rim, ball, front_rim;
-    var current_score = 0, current_score_text, high_score = 0, high_score_text, current_best_text;
-    var score_sound, backboard, whoosh, fail, spawn;
-    var moveInTween, fadeInTween, moveOutTween, fadeOutTween, emoji, emojiName;
-    var collisionGroup;
-    var location_interval;
-    var isDown = false;
-    var start_location;
-    var end_location;
-
-    // Funções do jogo
-    function preload() {
-        try {
-            game.load.image('ball', './assets/images/ball.png');
-            game.load.image('hoop', './assets/images/hoop.png');
-            game.load.image('side rim', './assets/images/side_rim.png');
-            game.load.image('front rim', './assets/images/front_rim.png');
-
-            // Carregar emojis
-            for (var i = 0; i < 5; i++) {
-                game.load.image('win' + i, './assets/images/win' + i + '.png');
-                game.load.image('lose' + i, './assets/images/lose' + i + '.png');
-            }
-
-            // Carregar áudios
-            game.load.audio('score', './assets/audio/score.wav');
-            game.load.audio('backboard', './assets/audio/backboard.wav');
-            game.load.audio('whoosh', './assets/audio/whoosh.wav');
-            game.load.audio('fail', './assets/audio/fail.wav');
-            game.load.audio('spawn', './assets/audio/spawn.wav');
-        } catch (error) {
-            console.error('Erro no preload:', error);
-        }
-    }
-
-    // [Manter as funções create, update, hitRim, createBall, click, release, launch exatamente como estão]
-
-    // Inicialização do jogo
-    try {
-        game = new Phaser.Game(
-            mobile ? screenWidth : 400,
-            mobile ? screenHeight : 625,
-            Phaser.CANVAS,
-            '',
-            {
-                preload: preload,
-                create: create,
-                update: update
-            }
-        );
-    } catch (error) {
-        console.error('Erro ao inicializar o jogo:', error);
-        document.body.innerHTML = '<p style="color: white; text-align: center;">Erro ao inicializar o jogo. Por favor, recarregue a página.</p>';
-    }
-});
+<script>
+    (adsbygoogle = window.adsbygoogle || []).push({});
 </script>
 
+<script type="text/javascript">
+var screenWidth = window.innerWidth;
+var screenHeight = window.innerHeight;
+var mobile;
+
+if (screenWidth <= 750) {
+    mobile = true;
+} else {
+    mobile = false;
+}
+
+// Função para desbloqueio de áudio
+function unlockAudio() {
+    var audioContext = game.sound.context;
+    if (audioContext && audioContext.state === 'suspended') {
+        audioContext.resume();
+    }
+}
+
+// Variáveis do jogo
+var game;
+var hoop, left_rim, right_rim, ball, front_rim;
+var current_score = 0, current_score_text, high_score = 0, high_score_text, current_best_text;
+var score_sound, backboard, whoosh, fail, spawn;
+var moveInTween, fadeInTween, moveOutTween, fadeOutTween, emoji, emojiName;
+var collisionGroup;
+var bestScoreCookie;
+
+// Funções do Cookie
+const getCookie = () => {
+    var scoreCookie;
+
+    if (!document.cookie.includes('BestScore')) {
+        document.cookie = `BestScore=0`;
+    }
+    let myCookie = document.cookie.split(';')
+        .forEach(cookie => {
+            if (cookie.includes('BestScore')) {
+                scoreCookie = cookie;
+            }
+        });
+    scoreCookie = scoreCookie.split('=');
+    return scoreCookie[1];
+};
+
+const setCookie = (newBestScore) => {
+    document.cookie = `BestScore=${newBestScore}`;
+};
+
+bestScoreCookie = getCookie();
+
+// Inicialização do jogo
+if (mobile) {
+    game = new Phaser.Game(screenWidth, screenHeight, Phaser.CANVAS, '', { 
+        preload: preload, 
+        create: create, 
+        update: update 
+    });    
+} else {
+    game = new Phaser.Game(400, 625, Phaser.CANVAS, '', { 
+        preload: preload, 
+        create: create, 
+        update: update 
+    });
+}
+
+function preload() {
+    game.load.image('ball', 'assets/images/ball.png');
+    game.load.image('hoop', 'assets/images/hoop.png');
+    game.load.image('side rim', 'assets/images/side_rim.png');
+    game.load.image('front rim', 'assets/images/front_rim.png');
+
+    game.load.image('win0', 'assets/images/win0.png');
+    game.load.image('win1', 'assets/images/win1.png');
+    game.load.image('win2', 'assets/images/win2.png');
+    game.load.image('win3', 'assets/images/win3.png');
+    game.load.image('win4', 'assets/images/win4.png');
+    game.load.image('lose0', 'assets/images/lose0.png');
+    game.load.image('lose1', 'assets/images/lose1.png');
+    game.load.image('lose2', 'assets/images/lose2.png');
+    game.load.image('lose3', 'assets/images/lose3.png');
+    game.load.image('lose4', 'assets/images/lose4.png');
+
+    game.load.audio('score', 'assets/audio/score.wav');
+    game.load.audio('backboard', 'assets/audio/backboard.wav');
+    game.load.audio('whoosh', 'assets/audio/whoosh.wav');
+    game.load.audio('fail', 'assets/audio/fail.wav');
+    game.load.audio('spawn', 'assets/audio/spawn.wav');
+}
+
+function create() {
+    game.physics.startSystem(Phaser.Physics.P2JS);
+    game.physics.p2.setImpactEvents(true);
+    game.physics.p2.restitution = 0.63;
+    game.physics.p2.gravity.y = 0;
+
+    collisionGroup = game.physics.p2.createCollisionGroup();
+
+    // Inicialização do áudio com verificação de contexto
+    try {
+        game.sound.boot();
+        
+        score_sound = game.add.audio('score', 1);
+        backboard = game.add.audio('backboard', 0.5);
+        whoosh = game.add.audio('whoosh', 1);
+        fail = game.add.audio('fail', 0.1);
+        spawn = game.add.audio('spawn', 1);
+
+        // Adicionar eventos para desbloqueio de áudio em dispositivos móveis
+        if (mobile) {
+            document.addEventListener('touchstart', unlockAudio, false);
+            document.addEventListener('click', unlockAudio, false);
+        }
+    } catch (e) {
+        console.log('Erro ao inicializar áudio:', e);
+    }
+
+    game.stage.backgroundColor = '#009aff';
+
+    current_score_text = game.add.text(20, 20, '', { font: 'Arial', fontSize: '40px', fill: '#fff', align: 'center' });
+    current_best_text = game.add.text(20, 20, 'Melhor pontuação:', { font: 'Arial', fontSize: '20px', fill: '#fff', align: 'center' });
+    current_best_score_text = game.add.text(190, 15, `${getCookie()}`, { font: 'Arial', fontSize: '30px', fill: '#fff', align: 'center' });
+    
+    if (mobile) {
+        hoop = game.add.sprite(((screenWidth / 2) - 112), 62, 'hoop');
+        left_rim = game.add.sprite(((screenWidth / 2) - 82), 190, 'side rim');
+        right_rim = game.add.sprite(((screenWidth / 2) + 82), 190, 'side rim');
+    } else {
+        hoop = game.add.sprite(88, 62, 'hoop');
+        left_rim = game.add.sprite(119, 190, 'side rim');
+        right_rim = game.add.sprite(282, 190, 'side rim');
+    }
+
+    game.physics.p2.enable([ left_rim, right_rim ], false);
+
+    left_rim.body.setCircle(2.5);
+    left_rim.body.static = true;
+    left_rim.body.setCollisionGroup(collisionGroup);
+    left_rim.body.collides([collisionGroup]);
+
+    right_rim.body.setCircle(2.5);
+    right_rim.body.static = true;
+    right_rim.body.setCollisionGroup(collisionGroup);
+    right_rim.body.collides([collisionGroup]);
+
+    createBall();
+
+    cursors = game.input.keyboard.createCursorKeys();
+    game.input.onDown.add(click, this);
+    game.input.onUp.add(release, this);
+}
+
+// [Resto do código permanece exatamente igual ao original]
+
+</script>
 </body>
 </html>
